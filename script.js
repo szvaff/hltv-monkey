@@ -41,6 +41,28 @@
         },
         STATS_ROW_VALUE: {
             'float': 'right'
+        },
+        MAP_CHANGER: {
+            'width' : '100%',
+            'font-size': '0',
+            'background-color': '#fff',
+            'margin-top': "10px"
+        },
+        MAP_CHANGER_ITEM: {
+            'display': 'inline-block',
+            'font-size': '12px',
+            'text-align': 'center',
+            'cursor': 'pointer'
+        },
+        ACTIVE_MAP_CHANGER_ITEM: {
+            'font-weight': 'bold',
+            'color': '#2d6da3;',
+            'box-shadow': 'inset 0 -3px 0 0 #2d6da3'
+        },
+        INACTIVE_MAP_CHANGER_ITEM: {
+            'font-weight': '',
+            'color': '',
+            'box-shadow': ''
         }
     };
     
@@ -50,6 +72,7 @@
     var DAYS = 90;
     var URL_PREFIX_LINEUP_STATS = "https://www.hltv.org/stats/lineup/map/";
     
+    var $mapChanger = $("<div class='stats-section'></div>");
     var vetoBox = $("div.veto-box:first");
     var unixDate = new Date(parseInt($("div.date").attr("data-unix")));
     var lineupsDivs = $("div.lineups div.lineup");
@@ -61,6 +84,7 @@
     var $statsDiv2;
     var dateFilter = getDateFilter();
     var maps = [];
+    var selectedMap;
     
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
@@ -90,9 +114,7 @@
         vetoBox.append("<button id='statsbtn'>Stats</button>");
         
         $("#statsbtn").click(function() {
-            clean();
-            MATCH_TYPE = null;
-            queryStats();
+            startStatsQuery();
         });
     }
     
@@ -100,9 +122,7 @@
         vetoBox.append("<button id='onlinestatsbtn'>Stats [Online]</button>");
         
         $("#onlinestatsbtn").click(function() {
-            clean();
-            MATCH_TYPE = "Online";
-            queryStats();
+            startStatsQuery("Online");
         });
     }
 
@@ -110,10 +130,15 @@
         vetoBox.append("<button id='lanstatsbtn'>Stats [LAN]</button>");
         
         $("#lanstatsbtn").click(function() {
-            clean();
-            MATCH_TYPE = "Lan";
-            queryStats();
+            startStatsQuery("Lan");
         });
+    }
+
+    function startStatsQuery(matchType) {
+        clean();
+        MATCH_TYPE = matchType;
+        queryStats();
+        addMapChanger();
     }
     
     function getLineupStatsUrlForMap(playersTeam, map) {
@@ -190,6 +215,39 @@
         });
     }
 
+    function addMapChanger() {
+        selectedMap = maps[0];
+
+        if (maps.length < 2) {
+            return;
+        }
+
+        var width = 100/maps.length;
+
+        for (var item in maps) {
+            var $map = $("<div class='mapstat-changer stats-top-menu-item " + maps[item] + "'>" + maps[item] + "</div>");
+            $map.css("width", width + "%");
+            $map.css(STYLES.MAP_CHANGER_ITEM);
+
+            $map.click(function() {
+                showMapStats($(this).text());
+            });
+
+            $mapChanger.append($map);
+        }
+
+        $mapChanger.css(STYLES.MAP_CHANGER);
+        $mapChanger.insertBefore($statsDiv1);
+    }
+
+    function showMapStats(which) {
+        $(".mapstat").css("display", "none");
+        $(".mapstat." + which).css("display", "inline-block");
+
+        $(".mapstat-changer").css(STYLES.INACTIVE_MAP_CHANGER_ITEM);
+        $(".mapstat-changer." + which).css(STYLES.ACTIVE_MAP_CHANGER_ITEM);
+    }
+
     function appendStats(result, urls, statsDiv) {
         for (var i = 0; i < result.length; i++) {
             var el = $('<div></div>');
@@ -202,13 +260,13 @@
                 var next = $(this).parent().next();
                 var graph = el.find("div.graph");
                 var stats = el.find("div.stats-rows");
-                var toAppend = $("<div style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next);
+                var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next);
                 var afterFirstKill = parseFloat(toAppend.find(".large-strong:first").text());
                 var afterFirstDeath = parseFloat(toAppend.find(".large-strong:nth(1)").text());
                 toAppend.find(".big-padding").css(STYLES.BIG_PADDING);
                 toAppend.find(".large-strong").css(STYLES.LARGE_STRONG);
-                statsDiv.append(toAppend);
 
+                statsDiv.append(toAppend);
                 statsDiv.find(".stats-rows .stats-row").css(STYLES.STATS_ROW);
                 statsDiv.find(".stats-rows .stats-row:nth-child(2n)").css(STYLES.STATS_ROW_EVEN);
                 statsDiv.find(".stats-rows .strong").css(STYLES.STATS_ROW_STRONG);
@@ -216,10 +274,13 @@
 
                 var graphData = graph.data("fusionchart-config");
                 FusionCharts.ready(function () {
+                    console.log(graphData);
                     new FusionCharts(graphData).render();
                 });
             });
         }
+
+        showMapStats(selectedMap);
     }
     
     addStatsButton();
