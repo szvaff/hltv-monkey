@@ -218,7 +218,7 @@
     function addMapChanger() {
         selectedMap = maps[0];
 
-        if (maps.length < 2) {
+        if (maps.length < 2 || $(".mapstat-changer").length > 0) {
             return;
         }
 
@@ -274,7 +274,6 @@
 
                 var graphData = graph.data("fusionchart-config");
                 FusionCharts.ready(function () {
-                    console.log(graphData);
                     new FusionCharts(graphData).render();
                 });
             });
