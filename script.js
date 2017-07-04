@@ -63,6 +63,13 @@
             'font-weight': '',
             'color': '',
             'box-shadow': ''
+        },
+        HEADLINE_BOX: {
+            'position' : 'relative'
+        },
+        MATCHES_URL: {
+            'position' : 'absolute',
+            'right': '10px'
         }
     };
     
@@ -71,6 +78,7 @@
     var MATCH_TYPE;
     var DAYS = 90;
     var URL_PREFIX_LINEUP_STATS = "https://www.hltv.org/stats/lineup/map/";
+    var URL_PREFIX_LINEUP_MATCHES = "https://www.hltv.org/stats/lineup/matches/";
     
     var $mapChanger = $("<div class='stats-section'></div>");
     var vetoBox = $("div.veto-box:first");
@@ -143,6 +151,16 @@
     
     function getLineupStatsUrlForMap(playersTeam, map) {
         var baseUrl = URL_PREFIX_LINEUP_STATS + MAP_ID[map] + "?";
+        for (var i = 0; i < 5; i++) {
+            var href1 = playersTeam[i].href.substring(playersTeam[i].href.indexOf("/player/") + "/player/".length, playersTeam[i].href.lastIndexOf("/"));
+            baseUrl += "lineup=" + href1 + "&";
+        }
+
+        return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + dateFilter + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
+    }
+
+    function getLineupMatchesUrl(playersTeam) {
+        var baseUrl = URL_PREFIX_LINEUP_MATCHES + "?";
         for (var i = 0; i < 5; i++) {
             var href1 = playersTeam[i].href.substring(playersTeam[i].href.indexOf("/player/") + "/player/".length, playersTeam[i].href.lastIndexOf("/"));
             baseUrl += "lineup=" + href1 + "&";
@@ -240,6 +258,21 @@
         $mapChanger.insertBefore($statsDiv1);
     }
 
+    function addMatchesLinks() {
+        var headLineBoxes = $(".lineup .box-headline");
+        headLineBoxes.css(STYLES.HEADLINE_BOX);
+
+        var url1 = getLineupMatchesUrl(playersTeam1);
+        var link1 = $("<a target='_blank' href='" + url1 + "'>Matches... </a>");
+        link1.css(STYLES.MATCHES_URL);
+        $(headLineBoxes[0]).append(link1);
+
+        var url2 = getLineupMatchesUrl(playersTeam2);
+        var link2 = $("<a target='_blank' href='" + url2 + "'>Matches... </a>");
+        link2.css(STYLES.MATCHES_URL);
+        $(headLineBoxes[1]).append(link2);
+    }
+
     function showMapStats(which) {
         $(".mapstat").css("display", "none");
         $(".mapstat." + which).css("display", "inline-block");
@@ -286,4 +319,5 @@
     addOnlineStatsButton();
     addLanStatsButton();
     addCopyButton();
+    addMatchesLinks();
 })();
