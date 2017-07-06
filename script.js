@@ -20,6 +20,8 @@
         Overpass: 40,
         Train: 35
     };
+
+    var ALL_MAPS = ["Cache", "Cobblestone", "Inferno", "Mirage", "Nuke", "Overpass", "Train"];
     
     var STYLES = {
         BIG_PADDING: {
@@ -92,7 +94,7 @@
     var $statsDiv2;
     var dateFilter = getDateFilter();
     var maps = [];
-    var selectedMap;
+    var selectedMap = null;
     
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
@@ -178,7 +180,7 @@
             
             var format = "BO3";
             if (vetoBox.text().indexOf("Best of 1") > 0) {
-                if (maps[0] && maps[0] !== "TBA") {
+                if (selectedMap !== null) {
                     format = maps[0];
                 } else {
                     format = "BO1";
@@ -200,16 +202,17 @@
     }
     
     function queryStats() {
-        if (maps.length === 0) {
-            maps = ["Cache", "Cobblestone", "Inferno", "Mirage", "Nuke", "Overpass", "Train"];
-        }
+        // if (maps.length === 0) {
+        //     maps = ALL_MAPS;
+        // }
         
+
         var urlPromises1 = [];
         var urlPromises2 = [];
         var urls1 = [];
         var urls2 = [];
-        for (var i = 0; i < maps.length; i++) {
-            var map = maps[i];
+        for (var i = 0; i < ALL_MAPS.length; i++) {
+            var map = ALL_MAPS[i];
             var url1 = getLineupStatsUrlForMap(playersTeam1, map);
             var url2 = getLineupStatsUrlForMap(playersTeam2, map);
             urls1.push(url1);
@@ -282,17 +285,30 @@
     }
 
     function appendStats(result, urls, statsDiv) {
+        var overallStats = [];
+
         for (var i = 0; i < result.length; i++) {
             var el = $('<div></div>');
             var doc = el.html(result[i]);
             var themap = el.find("div.stats-top-menu-item.selected").text();
-            
+
             el.find("span:contains('Game changers')").each(function() {
                 var parent = $(this).parent();
                 $(this).html("<a target='_blank' href='" + urls[i] + "'>" + themap + "</a>");
                 var next = $(this).parent().next();
                 var graph = el.find("div.graph");
                 var stats = el.find("div.stats-rows");
+
+                overallStats.push({
+                    mapName: themap,
+                    timesPlayed: stats.find("span:contains('Times played')").siblings()[0].innerText,
+                    winPercent: stats.find("span:contains('Win percent')").siblings()[0].innerText
+                });
+
+                if (maps.indexOf(themap) == -1) {
+                    return;
+                }
+
                 var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next);
                 var afterFirstKill = parseFloat(toAppend.find(".large-strong:first").text());
                 var afterFirstDeath = parseFloat(toAppend.find(".large-strong:nth(1)").text());
@@ -312,7 +328,75 @@
             });
         }
 
+        addOverallStats(overallStats, statsDiv);
         showMapStats(selectedMap);
+    }
+
+    function addOverallStats(stats, statsDiv) {
+        var id = "overall-" + new Date().getTime();
+        statsDiv.prepend("<div id='" + id + "'></div>");
+        var categories = [];
+        var timesPlayedDataset = {
+            seriesname: "Times Played",
+            data: []
+        };
+        var mapWinPercentageDataset = {
+            seriesname: "Won",
+            data: []
+        };
+
+        for (var i = 0; i < stats.length; i++) {
+            var stat = stats[i];
+            categories.push({
+                 label: stat.mapName
+            });
+            var val = (stat.timesPlayed * parseFloat(stat.winPercent)/100);
+            mapWinPercentageDataset.data.push({
+                value: val.toFixed(0)
+            });
+            timesPlayedDataset.data.push({
+                value: stat.timesPlayed
+            });
+        }
+
+        FusionCharts.ready(function () {
+            new FusionCharts({
+                width: "100%",
+                dataFormat: "json",
+                type: "msbar2d",
+                renderAt: id,
+                containerBackgroundOpacity: 0,
+                heightOverride: false,
+                dataSource:{  
+                    chart:{  
+                        theme: "fint",
+                        showLabels: 1,
+                        showValues: 1,
+                        showPercentValues: 1,
+                        enableSmartLabels: 1,
+                        showPercentageInLabel: 1,
+                        labelDistance: 1,
+                        canvasBgAlpha: 0,
+                        labelFontColor: "#7d7d7d",
+                        baseFontColor: "#7d7d7d",
+                        logoAlpha: 20,
+                        logoScale: 50,
+                        logoPosition: "TR",
+                        bgAlpha: 0,
+                        borderAlpha: 0,
+                        showShadow: 0,
+                        use3DLighting: 1,
+                        animation: 0
+                    },
+                    categories: [{
+                        category: [categories]}],
+                    dataset: [
+                        timesPlayedDataset, 
+                        mapWinPercentageDataset
+                    ]
+                }
+            }).render();
+        });
     }
     
     addStatsButton();
