@@ -95,10 +95,13 @@
     var dateFilter = getDateFilter();
     var maps = [];
     var selectedMap = null;
+    var tba = false;
     
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
             maps.push(el.innerText);
+        } else {
+            tba = true;
         }
     });
     
@@ -180,10 +183,10 @@
             
             var format = "BO3";
             if (vetoBox.text().indexOf("Best of 1") > 0) {
-                if (selectedMap !== null) {
-                    format = maps[0];
-                } else {
+                if (tba) {
                     format = "BO1";
+                } else {
+                    format = maps[0];
                 }
             }
             
@@ -202,11 +205,10 @@
     }
     
     function queryStats() {
-        // if (maps.length === 0) {
-        //     maps = ALL_MAPS;
-        // }
+        if (maps.length === 0) {
+            maps = ALL_MAPS;
+        }
         
-
         var urlPromises1 = [];
         var urlPromises2 = [];
         var urls1 = [];
