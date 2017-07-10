@@ -72,6 +72,12 @@
         MATCHES_URL: {
             'position' : 'absolute',
             'right': '10px'
+        },
+        RESULTS: {
+            'margin-top': '25px'
+        },
+        RESULTS_RESULT_TD: {
+            'text-align': 'center'
         }
     };
     
@@ -311,9 +317,26 @@
                     return;
                 }
 
-                var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next);
-                var afterFirstKill = parseFloat(toAppend.find(".large-strong:first").text());
-                var afterFirstDeath = parseFloat(toAppend.find(".large-strong:nth(1)").text());
+                var results = el.find("table.stats-table");
+                results.find("tr th.statsTeamMapEvent").remove();
+                var hasLineup = false;
+
+                if(results.find("tr th.statsTeamMapTeam1").length > 0) {
+                    hasLineup = true;
+                }
+
+                if (hasLineup) {
+                    results.find("tr th.statsTeamMapTeam1").remove();
+                    results.find("tr td:nth-child(2)").remove();
+                    results.find("tr td:nth-child(3)").remove();
+                } else {
+                    results.find("tr td:nth-child(3)").remove();
+                }
+
+                results.css(STYLES.RESULTS);
+                results.find("tr td:nth-child(3)").css(STYLES.RESULTS_RESULT_TD);
+                
+                var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(results);
                 toAppend.find(".big-padding").css(STYLES.BIG_PADDING);
                 toAppend.find(".large-strong").css(STYLES.LARGE_STRONG);
 
