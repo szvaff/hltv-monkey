@@ -477,9 +477,11 @@
                 heightOverride: false,
                 dataSource:{  
                     chart:{  
+                        bgcolor: "#ffffff",
+                        bgAlpha: 100,
                         caption: "Wins",
                         lineThickness : "2",
-                        paletteColors : "#55FF55",
+                        paletteColors : "#1aaf5d",
                         baseFontColor : "#7d7d7d",
                         baseFont : "Helvetica Neue,Arial",
                         showBorder : "0",
@@ -509,10 +511,12 @@
                 containerBackgroundOpacity: 0,
                 heightOverride: false,
                 dataSource:{  
-                    chart:{  
+                    chart:{
+                        bgcolor: "#ffffff",
+                        bgAlpha: 100,
                         caption: "Losses",
                         lineThickness : "2",
-                        paletteColors : "#FF5555",
+                        paletteColors : "#DD2C00",
                         baseFontColor : "#7d7d7d",
                         baseFont : "Helvetica Neue,Arial",
                         showBorder : "0",
