@@ -83,7 +83,7 @@
         }
     };
     
-    var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px;'></div>";
+    var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px; position: relative;'></div>";
     var MIN_LINEUP_MATCH = 4;
     var MATCH_TYPE;
     var DAYS = 90;
@@ -289,6 +289,7 @@
     function showMapStats(which) {
         $(".mapstat").css("display", "none");
         $(".mapstat." + which).css("display", "inline-block");
+        $(".mapstat." + which).css("height", "100%");
 
         $(".mapstat-changer").css(STYLES.INACTIVE_MAP_CHANGER_ITEM);
         $(".mapstat-changer." + which).css(STYLES.ACTIVE_MAP_CHANGER_ITEM);
@@ -339,45 +340,7 @@
                 results.find("tr td:nth-child(3)").css(STYLES.RESULTS_RESULT_TD);
 
                 var ranksGraphsBtn = $("<div style='text-align: center; margin-top: 25px;'><button type='button'>Draw Wins/Losses Graph</button></div>");
-                ranksGraphsBtn.on("click", function() {
-                    var matchRows = $(this).siblings("table.stats-table").find("tbody tr");
-                    var matches = [];
-                    var request = [];
-                    var me = $(this);
-
-                    for (var i = 0; i < matchRows.length; i++) {
-                        var date = $(matchRows[i]).find("td.time a").text();
-                        var dateSplitted = date.split("/");
-                        var name = $(matchRows[i]).find("a.image-and-label span").text();
-                        var won = $($(matchRows[i]).find(".statsTeamMapResult")).hasClass("match-won");
-                        matches.push({name: name, won: won, date: date});
-
-                        request.push({
-                            date: new Date("20" + dateSplitted[2], dateSplitted[0]-1, dateSplitted[1]),
-                            name: name
-                        });
-                    }
-
-                    GM_xmlhttpRequest({
-                        method: "POST",
-                        url: "http://35.189.241.231/find",
-                        data: JSON.stringify(request),
-                        headers: {
-                          "Content-Type": "application/json"
-                        },
-                        onload: function(response) {
-                            var rankArrays = JSON.parse(response.responseText);
-                            var data = [];
-
-                            for (var i = 0; i < rankArrays.length; i++) {
-                                data.push(rankArrays[i][rankArrays[i].length - 1])
-                            }
-
-                            createRankGraph(me, data, matches);
-                        }
-                    });
-
-                });
+                ranksGraphsBtn.on("click", drawRankGraphs);
                 
                 var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(results);
                 toAppend.append(ranksGraphsBtn);
@@ -402,6 +365,56 @@
         showMapStats(selectedMap);
     }
     
+    function drawRankGraphs() {
+        var matchRows = $(this).siblings("table.stats-table").find("tbody tr");
+        var matches = [];
+        var request = [];
+        var me = $(this);
+
+        for (var i = 0; i < matchRows.length; i++) {
+            var date = $(matchRows[i]).find("td.time a").text();
+            var dateSplitted = date.split("/");
+            var name = $(matchRows[i]).find("a.image-and-label span").text();
+            var won = $($(matchRows[i]).find(".statsTeamMapResult")).hasClass("match-won");
+            matches.push({name: name, won: won, date: date});
+            var month = parseInt(dateSplitted[1]) - 1;
+            var year = parseInt("20" + dateSplitted[2]);
+            var day = parseInt(dateSplitted[0]);
+
+            if (year < 2017 || (year == 2017 && month < 11) || (year == 2017 && month == 11 && day < 16)) {
+                year = 2017, month = 11, day = 16;
+            }
+
+            month = month > 9 ? month : "0" + month;
+            day = day > 9 ? day : "0" + day;
+            request.push({
+                date: year + "-" + month + "-" + day + "T23:59Z",
+                name: name
+            });
+        }
+
+        console.log("GM_xmlhttpRequest");
+        GM_xmlhttpRequest({
+            method: "POST",
+            url: "http://35.189.241.231/find",
+            data: JSON.stringify(request),
+            headers: {
+                "Content-Type": "application/json"
+            },
+            onload: function(response) {
+                var rankArrays = JSON.parse(response.responseText);
+                var data = [];
+
+                for (var i = 0; i < rankArrays.length; i++) {
+                    data.push(rankArrays[i][rankArrays[i].length - 1])
+                }
+
+                createRankGraph(me, data, matches);
+            }
+        });
+
+    }
+
     function findRank(data, teamName) {
         for (var i = 0; i < data.length; i++) {
             if (!data[i]) {
@@ -420,8 +433,12 @@
         var parent = btn.parent();
         btn.remove();
 
-        var wins = $("<div id='rank-wins'>wins</div>");
-        var losses = $("<div id='rank-losses'>losses</div>");
+        var nowEpoch = new Date().getTime();
+
+        var container = $("<div style='position:absolute;bottom:0;width:100%'></div>");
+        var wins = $("<div id='rank-wins" + nowEpoch + "' style='margin-top: 25px;'>wins</div>");
+        var losses = $("<div id='rank-losses" + nowEpoch + "'style='margin-top: 25px;'>losses</div>");
+        container.append(wins, losses);
 
         var winData = [];
         var lossData = [];
@@ -429,7 +446,7 @@
             var match = matches[i];
             var rank = findRank(data, match.name);
 
-            if (rank == null) {
+            if (rank == null || rank == "" || rank == undefined) {
                 console.log("Can't find rank for: " + match.name);
                 continue;
             }
@@ -447,13 +464,15 @@
             }
         }
 
-        parent.append(wins).append(losses);
+        parent.append(container);
+        $("<div style='height: 650px'></div>").insertBefore(container);
+        
         FusionCharts.ready(function () {
             new FusionCharts({
                 width: "100%",
                 dataFormat: "json",
                 type: "line",
-                renderAt: "rank-wins",
+                renderAt: "rank-wins" + nowEpoch,
                 containerBackgroundOpacity: 0,
                 heightOverride: false,
                 dataSource:{  
@@ -477,6 +496,39 @@
                         showAlternateHGridColor : "0",
                     },
                     data: winData.reverse()
+                }
+            }).render();
+        });
+
+        FusionCharts.ready(function () {
+            new FusionCharts({
+                width: "100%",
+                dataFormat: "json",
+                type: "line",
+                renderAt: "rank-losses" + nowEpoch,
+                containerBackgroundOpacity: 0,
+                heightOverride: false,
+                dataSource:{  
+                    chart:{  
+                        caption: "Losses",
+                        lineThickness : "2",
+                        paletteColors : "#FF5555",
+                        baseFontColor : "#7d7d7d",
+                        baseFont : "Helvetica Neue,Arial",
+                        showBorder : "0",
+                        canvasBorderAlpha : "0",
+                        divlineAlpha : "100",
+                        divlineColor : "#999999",
+                        divlineThickness : "1",
+                        divLineIsDashed : "1",
+                        divLineDashLen: "1",
+                        divLineGapLen : "1",
+                        showXAxisLine : "1",
+                        xAxisLineThickness : "1",
+                        xAxisLineColor : "#999999",
+                        showAlternateHGridColor : "0",
+                    },
+                    data: lossData.reverse()
                 }
             }).render();
         });
