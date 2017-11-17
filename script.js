@@ -5,7 +5,9 @@
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
-// @require http://code.jquery.com/jquery-latest.js
+// @require      http://code.jquery.com/jquery-latest.js
+// @connect      35.189.241.231
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 (function() {
@@ -335,8 +337,51 @@
 
                 results.css(STYLES.RESULTS);
                 results.find("tr td:nth-child(3)").css(STYLES.RESULTS_RESULT_TD);
+
+                var ranksGraphsBtn = $("<div style='text-align: center; margin-top: 25px;'><button type='button'>Draw Wins/Losses Graph</button></div>");
+                ranksGraphsBtn.on("click", function() {
+                    var matchRows = $(this).siblings("table.stats-table").find("tbody tr");
+                    var matches = [];
+                    var request = [];
+                    var me = $(this);
+
+                    for (var i = 0; i < matchRows.length; i++) {
+                        var date = $(matchRows[i]).find("td.time a").text();
+                        var dateSplitted = date.split("/");
+                        var name = $(matchRows[i]).find("a.image-and-label span").text();
+                        var won = $($(matchRows[i]).find(".statsTeamMapResult")).hasClass("match-won");
+                        matches.push({name: name, won: won, date: date});
+
+                        request.push({
+                            date: new Date("20" + dateSplitted[2], dateSplitted[0]-1, dateSplitted[1]),
+                            name: name
+                        });
+                    }
+
+                    GM_xmlhttpRequest({
+                        method: "POST",
+                        url: "http://35.189.241.231/find",
+                        data: JSON.stringify(request),
+                        headers: {
+                          "Content-Type": "application/json"
+                        },
+                        onload: function(response) {
+                            var rankArrays = JSON.parse(response.responseText);
+                            var data = [];
+
+                            for (var i = 0; i < rankArrays.length; i++) {
+                                data.push(rankArrays[i][rankArrays[i].length - 1])
+                            }
+
+                            createRankGraph(me, data, matches);
+                        }
+                    });
+
+                });
                 
                 var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(results);
+                toAppend.append(ranksGraphsBtn);
+
                 toAppend.find(".big-padding").css(STYLES.BIG_PADDING);
                 toAppend.find(".large-strong").css(STYLES.LARGE_STRONG);
 
@@ -355,6 +400,86 @@
 
         addOverallStats(overallStats, statsDiv);
         showMapStats(selectedMap);
+    }
+    
+    function findRank(data, teamName) {
+        for (var i = 0; i < data.length; i++) {
+            if (!data[i]) {
+                continue;
+            }
+            
+            if (data[i].name === teamName) {
+                return data[i].rank;
+            }
+        }
+
+        return null;
+    }
+
+    function createRankGraph(btn, data, matches) {
+        var parent = btn.parent();
+        btn.remove();
+
+        var wins = $("<div id='rank-wins'>wins</div>");
+        var losses = $("<div id='rank-losses'>losses</div>");
+
+        var winData = [];
+        var lossData = [];
+        for (var i = 0; i < matches.length; i++) {
+            var match = matches[i];
+            var rank = findRank(data, match.name);
+
+            if (rank == null) {
+                console.log("Can't find rank for: " + match.name);
+                continue;
+            }
+            
+            if (match.won) {
+                winData.push({
+                    label: match.date,
+                    value: rank
+                });
+            } else {
+                lossData.push({
+                    label: match.date,
+                    value: rank
+                });
+            }
+        }
+
+        parent.append(wins).append(losses);
+        FusionCharts.ready(function () {
+            new FusionCharts({
+                width: "100%",
+                dataFormat: "json",
+                type: "line",
+                renderAt: "rank-wins",
+                containerBackgroundOpacity: 0,
+                heightOverride: false,
+                dataSource:{  
+                    chart:{  
+                        caption: "Wins",
+                        lineThickness : "2",
+                        paletteColors : "#55FF55",
+                        baseFontColor : "#7d7d7d",
+                        baseFont : "Helvetica Neue,Arial",
+                        showBorder : "0",
+                        canvasBorderAlpha : "0",
+                        divlineAlpha : "100",
+                        divlineColor : "#999999",
+                        divlineThickness : "1",
+                        divLineIsDashed : "1",
+                        divLineDashLen: "1",
+                        divLineGapLen : "1",
+                        showXAxisLine : "1",
+                        xAxisLineThickness : "1",
+                        xAxisLineColor : "#999999",
+                        showAlternateHGridColor : "0",
+                    },
+                    data: winData.reverse()
+                }
+            }).render();
+        });
     }
 
     function addOverallStats(stats, statsDiv) {
