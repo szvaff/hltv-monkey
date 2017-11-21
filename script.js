@@ -84,7 +84,7 @@
     };
     
     var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px; position: relative;'></div>";
-    var MIN_LINEUP_MATCH = 4;
+    var MIN_LINEUP_MATCH = 5;
     var MATCH_TYPE;
     var DAYS = 90;
     var URL_PREFIX_LINEUP_STATS = "https://www.hltv.org/stats/lineup/map/";
