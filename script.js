@@ -442,6 +442,9 @@
 
         var winData = [];
         var lossData = [];
+        var winSum = 0, winCount = 0;
+        var lossSum = 0, lossCount = 0;
+
         for (var i = 0; i < matches.length; i++) {
             var match = matches[i];
             var rank = findRank(data, match.name);
@@ -450,17 +453,25 @@
                 console.log("Can't find rank for: " + match.name);
                 continue;
             }
+
+            rank = parseInt(rank);
             
             if (match.won) {
                 winData.push({
                     label: match.date,
                     value: rank
                 });
+
+                winSum += rank;
+                winCount++;
             } else {
                 lossData.push({
                     label: match.date,
                     value: rank
                 });
+
+                lossSum += rank;
+                lossCount++;
             }
         }
 
@@ -497,7 +508,15 @@
                         xAxisLineColor : "#999999",
                         showAlternateHGridColor : "0",
                     },
-                    data: winData.reverse()
+                    data: winData.reverse(),
+                    trendlines: [{
+                        line: [{
+                            startvalue: winSum/winCount,
+                            color: "#6baa01",
+                            displayvalue: "Avg " + (winSum/winCount).toFixed(2),
+                            valueOnRight: 1
+                        }]
+                    }]
                 }
             }).render();
         });
@@ -532,7 +551,15 @@
                         xAxisLineColor : "#999999",
                         showAlternateHGridColor : "0",
                     },
-                    data: lossData.reverse()
+                    data: lossData.reverse(),
+                    trendlines: [{
+                        line: [{
+                            startvalue: lossSum/lossCount,
+                            color: "#f0506e",
+                            displayvalue: "Avg " + (lossSum/lossCount).toFixed(2),
+                            valueOnRight: 1
+                        }]
+                    }]
                 }
             }).render();
         });
