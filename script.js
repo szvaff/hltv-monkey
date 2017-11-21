@@ -459,7 +459,8 @@
             if (match.won) {
                 winData.push({
                     label: match.date,
-                    value: rank
+                    value: rank,
+                    toolText: match.name
                 });
 
                 winSum += rank;
@@ -467,7 +468,8 @@
             } else {
                 lossData.push({
                     label: match.date,
-                    value: rank
+                    value: rank,
+                    toolText: match.name
                 });
 
                 lossSum += rank;
