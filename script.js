@@ -12,7 +12,7 @@
 
 (function() {
     'use strict';
-    
+
     var MAP_ID = {
         Cache: 29,
         Cobblestone: 39,
@@ -24,7 +24,7 @@
     };
 
     var ALL_MAPS = ["Cache", "Cobblestone", "Inferno", "Mirage", "Nuke", "Overpass", "Train"];
-    
+
     var STYLES = {
         BIG_PADDING: {
             'padding': '5px 10px',
@@ -82,14 +82,14 @@
             'text-align': 'center'
         }
     };
-    
+
     var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px; position: relative;'></div>";
     var MIN_LINEUP_MATCH = 5;
     var MATCH_TYPE;
     var DAYS = 90;
     var URL_PREFIX_LINEUP_STATS = "https://www.hltv.org/stats/lineup/map/";
     var URL_PREFIX_LINEUP_MATCHES = "https://www.hltv.org/stats/lineup/matches/";
-    
+
     var $mapChanger = $("<div class='stats-section'></div>");
     var vetoBox = $("div.veto-box:first");
     var unixDate = new Date(parseInt($("div.date").attr("data-unix")));
@@ -104,7 +104,7 @@
     var maps = [];
     var selectedMap = null;
     var tba = false;
-    
+
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
             maps.push(el.innerText);
@@ -112,7 +112,7 @@
             tba = true;
         }
     });
-    
+
     function getDateFilter() {
         var now = new Date();
         now.setDate(now.getDate());
@@ -130,18 +130,18 @@
             $statsDiv2.remove();
         }
     }
-    
+
     function addStatsButton() {
         vetoBox.append("<button id='statsbtn'>Stats</button>");
-        
+
         $("#statsbtn").click(function() {
             startStatsQuery();
         });
     }
-    
+
     function addOnlineStatsButton() {
         vetoBox.append("<button id='onlinestatsbtn'>Stats [Online]</button>");
-        
+
         $("#onlinestatsbtn").click(function() {
             startStatsQuery("Online");
         });
@@ -149,7 +149,7 @@
 
     function addLanStatsButton() {
         vetoBox.append("<button id='lanstatsbtn'>Stats [LAN]</button>");
-        
+
         $("#lanstatsbtn").click(function() {
             startStatsQuery("Lan");
         });
@@ -161,7 +161,7 @@
         queryStats();
         addMapChanger();
     }
-    
+
     function getLineupStatsUrlForMap(playersTeam, map) {
         var baseUrl = URL_PREFIX_LINEUP_STATS + MAP_ID[map] + "?";
         for (var i = 0; i < 5; i++) {
@@ -181,14 +181,14 @@
 
         return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + dateFilter + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
     }
-    
+
     function addCopyButton() {
         vetoBox.append("<button id='copybtn'>copy</button>");
-        
+
         $("#copybtn").click(function() {
             var dateString = unixDate.getFullYear() + "/" + ((unixDate.getMonth()+1) < 10 ? "0" : "") + (unixDate.getMonth()+1) + "/" + unixDate.getDate() + " " + unixDate.getHours() + ":" + (unixDate.getMinutes() < 10 ? "0" : "") + unixDate.getMinutes();
             var event = $("div.event").text();
-            
+
             var format = "BO3";
             if (vetoBox.text().indexOf("Best of 1") > 0) {
                 if (tba) {
@@ -197,11 +197,11 @@
                     format = maps[0];
                 }
             }
-            
+
             if (vetoBox.text().indexOf("Best of 2") > 0) {
                 format = "BO2";
             }
-            
+
             var teams = team1 + " vs " + team2;
             var txtArea = $("<textarea></textarea>");
             txtArea.text(dateString + "\t" + event + "\t" + teams + "\t" + format);
@@ -211,12 +211,12 @@
             txtArea.remove();
         });
     }
-    
+
     function queryStats() {
         if (maps.length === 0) {
             maps = ALL_MAPS;
         }
-        
+
         var urlPromises1 = [];
         var urlPromises2 = [];
         var urls1 = [];
@@ -230,17 +230,17 @@
             urlPromises1.push($.get(url1));
             urlPromises2.push($.get(url2));
         }
-        
+
         $statsDiv1 = $(STATS_DIV);
         $statsDiv2 = $(STATS_DIV);
         var $statsContainer = $(".flexbox.fix-half-width-margin.maps");
         $statsContainer.append($statsDiv1);
         $statsContainer.append($statsDiv2);
-        
+
         Promise.all(urlPromises1).then(function(result) {
             appendStats(result, urls1, $statsDiv1);
         });
-        
+
         Promise.all(urlPromises2).then(function(result) {
             appendStats(result, urls2, $statsDiv2);
         });
@@ -341,7 +341,7 @@
 
                 var ranksGraphsBtn = $("<div style='text-align: center; margin-top: 25px;'><button type='button'>Draw Wins/Losses Graph</button></div>");
                 ranksGraphsBtn.on("click", drawRankGraphs);
-                
+
                 var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(results);
                 toAppend.append(ranksGraphsBtn);
 
@@ -364,7 +364,7 @@
         addOverallStats(overallStats, statsDiv);
         showMapStats(selectedMap);
     }
-    
+
     function drawRankGraphs() {
         var matchRows = $(this).siblings("table.stats-table").find("tbody tr");
         var matches = [];
@@ -420,7 +420,7 @@
             if (!data[i]) {
                 continue;
             }
-            
+
             if (data[i].name === teamName) {
                 return data[i].rank;
             }
@@ -444,6 +444,7 @@
         var lossData = [];
         var winSum = 0, winCount = 0;
         var lossSum = 0, lossCount = 0;
+        var winRanks = [], lossRanks = [];
 
         for (var i = 0; i < matches.length; i++) {
             var match = matches[i];
@@ -455,7 +456,7 @@
             }
 
             rank = parseInt(rank);
-            
+
             if (match.won) {
                 winData.push({
                     label: match.date,
@@ -465,6 +466,7 @@
 
                 winSum += rank;
                 winCount++;
+                winRanks.push(rank);
             } else {
                 lossData.push({
                     label: match.date,
@@ -474,12 +476,13 @@
 
                 lossSum += rank;
                 lossCount++;
+                lossRanks.push(rank);
             }
         }
 
         parent.append(container);
         $("<div style='height: 650px'></div>").insertBefore(container);
-        
+
         FusionCharts.ready(function () {
             new FusionCharts({
                 width: "100%",
@@ -488,8 +491,8 @@
                 renderAt: "rank-wins" + nowEpoch,
                 containerBackgroundOpacity: 0,
                 heightOverride: false,
-                dataSource:{  
-                    chart:{  
+                dataSource:{
+                    chart:{
                         bgcolor: "#ffffff",
                         bgAlpha: 100,
                         caption: "Wins",
@@ -517,6 +520,11 @@
                             color: "#6baa01",
                             displayvalue: "Avg " + (winSum/winCount).toFixed(2),
                             valueOnRight: 1
+                        }, {
+                            startvalue: median(winRanks),
+                            color: "#96a901",
+                            displayvalue: "Mdn " + median(winRanks).toFixed(2),
+                            valueOnRight: 1
                         }]
                     }]
                 }
@@ -531,7 +539,7 @@
                 renderAt: "rank-losses" + nowEpoch,
                 containerBackgroundOpacity: 0,
                 heightOverride: false,
-                dataSource:{  
+                dataSource:{
                     chart:{
                         bgcolor: "#ffffff",
                         bgAlpha: 100,
@@ -560,11 +568,28 @@
                             color: "#f0506e",
                             displayvalue: "Avg " + (lossSum/lossCount).toFixed(2),
                             valueOnRight: 1
+                        }, {
+                            startvalue: median(lossRanks),
+                            color: "#ef8a50",
+                            displayvalue: "Mdn " + median(lossRanks).toFixed(2),
+                            valueOnRight: 1
                         }]
                     }]
                 }
             }).render();
         });
+    }
+
+    function median(values) {
+        values.sort( function(a,b) {return a - b;} );
+
+        var half = Math.floor(values.length/2);
+
+        if (values.length % 2) {
+            return values[half];
+        } else {
+            return (values[half-1] + values[half]) / 2.0;
+        }
     }
 
     function addOverallStats(stats, statsDiv) {
@@ -602,8 +627,8 @@
                 renderAt: id,
                 containerBackgroundOpacity: 0,
                 heightOverride: false,
-                dataSource:{  
-                    chart:{  
+                dataSource:{
+                    chart:{
                         theme: "fint",
                         showLabels: 1,
                         showValues: 1,
@@ -626,14 +651,14 @@
                     categories: [{
                         category: [categories]}],
                     dataset: [
-                        timesPlayedDataset, 
+                        timesPlayedDataset,
                         mapWinPercentageDataset
                     ]
                 }
             }).render();
         });
     }
-    
+
     addStatsButton();
     addOnlineStatsButton();
     addLanStatsButton();
