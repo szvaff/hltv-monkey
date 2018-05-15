@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.0.0
+// @version      1.0.1
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -18,10 +18,11 @@
         Mirage: 32,
         Nuke: 34,
         Overpass: 40,
-        Train: 35
+        Train: 35,
+        Dust2: 31
     };
 
-    var ALL_MAPS = ["Cache", "Cobblestone", "Inferno", "Mirage", "Nuke", "Overpass", "Train"];
+    var ALL_MAPS = ["Cache", "Cobblestone", "Inferno", "Mirage", "Nuke", "Overpass", "Train", "Dust2"];
     
     var STYLES = {
         BIG_PADDING: {
