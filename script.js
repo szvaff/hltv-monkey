@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.0.1
+// @version      1.0.2
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -13,7 +13,6 @@
     
     var MAP_ID = {
         Cache: 29,
-        Cobblestone: 39,
         Inferno: 33,
         Mirage: 32,
         Nuke: 34,
@@ -22,7 +21,7 @@
         Dust2: 31
     };
 
-    var ALL_MAPS = ["Cache", "Cobblestone", "Inferno", "Mirage", "Nuke", "Overpass", "Train", "Dust2"];
+    var ALL_MAPS = ["Cache", "Inferno", "Mirage", "Nuke", "Overpass", "Train", "Dust2"];
     
     var STYLES = {
         BIG_PADDING: {
