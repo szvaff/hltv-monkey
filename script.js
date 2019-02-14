@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.0.2
+// @version      1.1.0
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -78,6 +78,13 @@
         },
         RESULTS_RESULT_TD: {
             'text-align': 'center'
+        },
+        NOTEPAD_WRAPPER: {
+            'margin-top': '10px'
+        },
+        NOTEPAD: {
+            'width': '100%',
+            'padding': '0'
         }
     };
     
@@ -102,6 +109,7 @@
     var maps = [];
     var selectedMap = null;
     var tba = false;
+    var matchId = null;
     
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
@@ -423,10 +431,63 @@
             }).render();
         });
     }
+
+    function getMatchId() {
+        if (matchId !== null) {
+            return matchId;
+        }
+
+        matchId = window.location.href.replace("https://www.hltv.org/matches/", "").split("/")[0];
+        return matchId;
+    }
+
+    function addNotepad() {
+        if (!('indexedDB' in window)) {
+            console.log('This browser doesn\'t support IndexedDB');
+            return;
+        }
+
+        var connection = indexedDB.open('hltv-monkey', 1);
+
+        connection.onupgradeneeded = function () {
+            var db = this.result;
+            if (!db.objectStoreNames.contains('notes')) {
+                db.createObjectStore('notes', { keyPath: 'id' });
+            }
+        }
+
+        connection.onsuccess = function () {
+            var db = this.result;
+            vetoBox.append('<div id="notepad-wrapper" class="padding"><div>Notes</div><textarea id="notepad"></textarea></div>')
+            $("#notepad-wrapper").css(STYLES.NOTEPAD_WRAPPER);
+            $("#notepad").css(STYLES.NOTEPAD);
+
+            var id = getMatchId();
+            var tx = db.transaction('notes', 'readonly');
+            var store = tx.objectStore('notes');
+            var readTx = store.get(id);
+            readTx.onsuccess = function() {
+                var obj = this.result;
+                $("#notepad").val(obj.note);
+            }
+
+            $("#notepad").change(function() {
+                var value = $("#notepad").val();
+                var item = {
+                    id: id,
+                    note: value
+                };
+                var tx = db.transaction('notes', 'readwrite');
+                var store = tx.objectStore('notes');
+                store.put(item);
+            })
+        }
+    }
     
     addStatsButton();
     addOnlineStatsButton();
     addLanStatsButton();
     addCopyButton();
     addMatchesLinks();
+    addNotepad();
 })();
