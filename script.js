@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.1.0
+// @version      1.1.1
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -105,11 +105,11 @@
     var team2 = $("div.teamName")[1].innerText;
     var $statsDiv1;
     var $statsDiv2;
-    var dateFilter = getDateFilter();
     var maps = [];
     var selectedMap = null;
     var tba = false;
     var matchId = null;
+    var minusDays = 0;
     
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
@@ -120,11 +120,11 @@
     });
     
     function getDateFilter() {
-        var now = new Date();
-        now.setDate(now.getDate());
-        var date = new Date();
-        date.setDate(date.getDate() - DAYS);
-        return "startDate=" + (date.getFullYear()) + "-" + (date.getMonth()+1 < 10 ? "0" :"") + (date.getMonth()+1) + "-" + (date.getDate() < 10 ? "0" :"") + date.getDate() + "&endDate=" + now.getFullYear() + "-" + (now.getMonth()+1 < 10 ? "0" :"") + (now.getMonth()+1) + "-" + (now.getDate() < 10 ? "0" :"") + now.getDate();
+        var to = unixDate;
+        to.setDate(to.getDate() - minusDays);
+        var from = new Date(unixDate.getTime());
+        from.setDate(from.getDate() - DAYS - minusDays);
+        return "startDate=" + (from.getFullYear()) + "-" + (from.getMonth()+1 < 10 ? "0" :"") + (from.getMonth()+1) + "-" + (from.getDate() < 10 ? "0" :"") + from.getDate() + "&endDate=" + to.getFullYear() + "-" + (to.getMonth()+1 < 10 ? "0" :"") + (to.getMonth()+1) + "-" + (to.getDate() < 10 ? "0" :"") + to.getDate();
     }
 
     function clean() {
@@ -138,11 +138,17 @@
     }
     
     function addStatsButton() {
+        vetoBox.append("<div><input type='checkbox' id='exclude_matchday' /><label for='exclude_matchday'>Exclude matchday</label></div>");
         vetoBox.append("<button id='statsbtn'>Stats</button>");
         
         $("#statsbtn").click(function() {
             startStatsQuery();
         });
+
+        $("#exclude_matchday").change(function() {
+            var val = $(this).is(":checked");
+            val ? minusDays = 1 : minusDays = 0;
+        })
     }
     
     function addOnlineStatsButton() {
@@ -175,7 +181,7 @@
             baseUrl += "lineup=" + href1 + "&";
         }
 
-        return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + dateFilter + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
+        return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + getDateFilter() + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
     }
 
     function getLineupMatchesUrl(playersTeam) {
@@ -185,7 +191,7 @@
             baseUrl += "lineup=" + href1 + "&";
         }
 
-        return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + dateFilter + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
+        return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + getDateFilter() + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
     }
     
     function addCopyButton() {
@@ -468,7 +474,7 @@
             var readTx = store.get(id);
             readTx.onsuccess = function() {
                 var obj = this.result;
-                $("#notepad").val(obj.note);
+                obj && $("#notepad").val(obj.note);
             }
 
             $("#notepad").change(function() {
