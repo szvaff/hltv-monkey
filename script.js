@@ -8,6 +8,55 @@
 // @require http://code.jquery.com/jquery-latest.js
 // ==/UserScript==
 
+function Crawler() {
+    var queue = [];
+    var inProgress = null;
+
+    Crawler.prototype.queue = function(url) {
+        var toResolveLater = null;
+        var promise = new Promise((resolve, reject) => {
+            toResolveLater = resolve;
+        });
+
+        queue.push({
+            url: url,
+            promise: promise,
+            resolve: toResolveLater
+        })
+
+        next();
+        return promise;
+    }
+
+    function next() {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                if(inProgress !== null) {
+                    inProgress.promise.then(() => {
+                        next();
+                    })
+                    return;
+                }
+        
+                if (queue.length === 0) {
+                    resolve();
+                    return;
+                }
+        
+                inProgress = queue[0];
+                $.get(inProgress.url).then(result => {
+                    resolve(result);
+                    inProgress.resolve(result);
+                    queue.splice(0,1);
+                    inProgress = null;
+                })
+            }, Math.floor(Math.random()*2000))
+        })
+    }
+
+    return this;
+}
+
 (function() {
     'use strict';
     
@@ -110,6 +159,7 @@
     var tba = false;
     var matchId = null;
     var minusDays = 0;
+    var crawler = new Crawler();
     
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
@@ -250,11 +300,11 @@
         $statsContainer.append($statsDiv2);
         
         Promise.all(urlPromises1).then(function(result) {
-            appendStats(result, urls1, $statsDiv1);
+            appendStats(result, urls1, $statsDiv1, 1);
         });
         
         Promise.all(urlPromises2).then(function(result) {
-            appendStats(result, urls2, $statsDiv2);
+            appendStats(result, urls2, $statsDiv2, 2);
         });
     }
 
@@ -306,7 +356,7 @@
         $(".mapstat-changer." + which).css(STYLES.ACTIVE_MAP_CHANGER_ITEM);
     }
 
-    function appendStats(result, urls, statsDiv) {
+    function appendStats(result, urls, statsDiv, teamNum) {
         var overallStats = [];
 
         for (var i = 0; i < result.length; i++) {
@@ -364,11 +414,51 @@
                 FusionCharts.ready(function () {
                     new FusionCharts(graphData).render();
                 });
+
+                toAppend.append("<button id='entry_" + themap + "_" + teamNum + "'>entry</button>");
+                $("#entry_" + themap + "_" + teamNum).click(function() {
+                    var mapstatsurls = $(this).siblings("table").find("a").filter((i, e) => e.href.indexOf("mapstatsid") > -1);
+                    findEntryStats(mapstatsurls)
+                })
             });
         }
 
         addOverallStats(overallStats, statsDiv);
         showMapStats(selectedMap);
+    }
+
+    function findEntryStats(mapstatsurls) {
+        var promises = [];
+        mapstatsurls.each((i, e) => {
+            promises.push(new Promise(resolve => {
+                crawler.queue(e.href).then((doc) => {
+                    var el = $('<div></div>');
+                    el.html(doc);
+                    resolve(getEntries(el));
+                })
+            }))
+        })
+
+        Promise.all(promises).then(values => {
+            console.log(values);
+        })
+    }
+
+    function getEntries(el) {
+        var tl = el.find("div.team-left img.team-logo").attr('alt');
+        var left = false;
+        if (tl === team1) {
+            left = true;
+        }
+
+        var entries = el.find("div.match-info-row:nth(2)").text().trim();
+        var entryNum;
+        if(left) {
+            entryNum = entries.substr(0, entries.indexOf(":"));
+        } else {
+            entryNum = entries.substr(entries.indexOf(":") + 1, 3);
+        }
+        return parseInt(entryNum);
     }
 
     function addOverallStats(stats, statsDiv) {
