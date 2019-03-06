@@ -37,12 +37,12 @@ function Crawler() {
                     })
                     return;
                 }
-        
+
                 if (queue.length === 0) {
                     resolve();
                     return;
                 }
-        
+
                 inProgress = queue[0];
                 $.get(inProgress.url).then(result => {
                     resolve(result);
@@ -59,7 +59,7 @@ function Crawler() {
 
 (function() {
     'use strict';
-    
+
     var MAP_ID = {
         Cache: 29,
         Inferno: 33,
@@ -71,7 +71,7 @@ function Crawler() {
     };
 
     var ALL_MAPS = ["Cache", "Inferno", "Mirage", "Nuke", "Overpass", "Train", "Dust2"];
-    
+
     var STYLES = {
         BIG_PADDING: {
             'padding': '5px 10px',
@@ -136,14 +136,14 @@ function Crawler() {
             'padding': '0'
         }
     };
-    
+
     var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px;'></div>";
     var MIN_LINEUP_MATCH = 4;
     var MATCH_TYPE;
     var DAYS = 90;
     var URL_PREFIX_LINEUP_STATS = "https://www.hltv.org/stats/lineup/map/";
     var URL_PREFIX_LINEUP_MATCHES = "https://www.hltv.org/stats/lineup/matches/";
-    
+
     var $mapChanger = $("<div class='stats-section'></div>");
     var vetoBox = $("div.veto-box:first");
     var unixDate = new Date(parseInt($("div.date").attr("data-unix")));
@@ -160,7 +160,7 @@ function Crawler() {
     var matchId = null;
     var minusDays = 0;
     var crawler = new Crawler();
-    
+
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
             maps.push(el.innerText);
@@ -168,7 +168,7 @@ function Crawler() {
             tba = true;
         }
     });
-    
+
     function getDateFilter() {
         var to = unixDate;
         to.setDate(to.getDate() - minusDays);
@@ -186,11 +186,11 @@ function Crawler() {
             $statsDiv2.remove();
         }
     }
-    
+
     function addStatsButton() {
         vetoBox.append("<div><input type='checkbox' id='exclude_matchday' /><label for='exclude_matchday'>Exclude matchday</label></div>");
         vetoBox.append("<button id='statsbtn'>Stats</button>");
-        
+
         $("#statsbtn").click(function() {
             startStatsQuery();
         });
@@ -200,10 +200,10 @@ function Crawler() {
             val ? minusDays = 1 : minusDays = 0;
         })
     }
-    
+
     function addOnlineStatsButton() {
         vetoBox.append("<button id='onlinestatsbtn'>Stats [Online]</button>");
-        
+
         $("#onlinestatsbtn").click(function() {
             startStatsQuery("Online");
         });
@@ -211,7 +211,7 @@ function Crawler() {
 
     function addLanStatsButton() {
         vetoBox.append("<button id='lanstatsbtn'>Stats [LAN]</button>");
-        
+
         $("#lanstatsbtn").click(function() {
             startStatsQuery("Lan");
         });
@@ -223,7 +223,7 @@ function Crawler() {
         queryStats();
         addMapChanger();
     }
-    
+
     function getLineupStatsUrlForMap(playersTeam, map) {
         var baseUrl = URL_PREFIX_LINEUP_STATS + MAP_ID[map] + "?";
         for (var i = 0; i < 5; i++) {
@@ -243,14 +243,14 @@ function Crawler() {
 
         return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + getDateFilter() + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
     }
-    
+
     function addCopyButton() {
         vetoBox.append("<button id='copybtn'>copy</button>");
-        
+
         $("#copybtn").click(function() {
             var dateString = unixDate.getFullYear() + "/" + ((unixDate.getMonth()+1) < 10 ? "0" : "") + (unixDate.getMonth()+1) + "/" + unixDate.getDate() + " " + unixDate.getHours() + ":" + (unixDate.getMinutes() < 10 ? "0" : "") + unixDate.getMinutes();
             var event = $("div.event").text();
-            
+
             var format = "BO3";
             if (vetoBox.text().indexOf("Best of 1") > 0) {
                 if (tba) {
@@ -259,11 +259,11 @@ function Crawler() {
                     format = maps[0];
                 }
             }
-            
+
             if (vetoBox.text().indexOf("Best of 2") > 0) {
                 format = "BO2";
             }
-            
+
             var teams = team1 + " vs " + team2;
             var txtArea = $("<textarea></textarea>");
             txtArea.text(dateString + "\t" + event + "\t" + teams + "\t" + format);
@@ -273,12 +273,12 @@ function Crawler() {
             txtArea.remove();
         });
     }
-    
+
     function queryStats() {
         if (maps.length === 0) {
             maps = ALL_MAPS;
         }
-        
+
         var urlPromises1 = [];
         var urlPromises2 = [];
         var urls1 = [];
@@ -292,17 +292,17 @@ function Crawler() {
             urlPromises1.push($.get(url1));
             urlPromises2.push($.get(url2));
         }
-        
+
         $statsDiv1 = $(STATS_DIV);
         $statsDiv2 = $(STATS_DIV);
         var $statsContainer = $(".flexbox.fix-half-width-margin.maps");
         $statsContainer.append($statsDiv1);
         $statsContainer.append($statsDiv2);
-        
+
         Promise.all(urlPromises1).then(function(result) {
             appendStats(result, urls1, $statsDiv1, 1);
         });
-        
+
         Promise.all(urlPromises2).then(function(result) {
             appendStats(result, urls2, $statsDiv2, 2);
         });
@@ -391,7 +391,12 @@ function Crawler() {
 
                 if (hasLineup) {
                     results.find("tr th.statsTeamMapTeam1").remove();
-                    results.find("tr td:nth-child(2)").remove();
+                    var lineupTds = results.find("tr td:nth-child(2)");
+                    lineupTds.each((i, e) => {
+                        var $e = $(e);
+                        $e.parent("tr").find("a").attr("data-teamname", $e.text());
+                    });
+                    lineupTds.remove();
                     results.find("tr td:nth-child(3)").remove();
                 } else {
                     results.find("tr td:nth-child(3)").remove();
@@ -399,8 +404,17 @@ function Crawler() {
 
                 results.css(STYLES.RESULTS);
                 results.find("tr td:nth-child(3)").css(STYLES.RESULTS_RESULT_TD);
-                
-                var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(results);
+
+                var earlyAndLateDiv = $("<div style='margin-top: 25px; text-align: center'></div>");
+                var $earlyLateBtn = $("<button id='entry_" + themap + "_" + teamNum + "'>Collect early and late round stats</button>");
+                earlyAndLateDiv.append($earlyLateBtn);
+                $earlyLateBtn.click(function() {
+                    var mapstatsurls = $(this).parent().siblings("table").find("a").filter((i, e) => e.href.indexOf("mapstatsid") > -1);
+                    var resultTds = $(this).parent().siblings("table").find("td.statsTeamMapResult");
+                    collectEarlyAndLateRoundStats(mapstatsurls, $earlyLateBtn, resultTds)
+                })
+
+                var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(earlyAndLateDiv).append(results);
                 toAppend.find(".big-padding").css(STYLES.BIG_PADDING);
                 toAppend.find(".large-strong").css(STYLES.LARGE_STRONG);
 
@@ -414,12 +428,6 @@ function Crawler() {
                 FusionCharts.ready(function () {
                     new FusionCharts(graphData).render();
                 });
-
-                toAppend.append("<button id='entry_" + themap + "_" + teamNum + "'>entry</button>");
-                $("#entry_" + themap + "_" + teamNum).click(function() {
-                    var mapstatsurls = $(this).siblings("table").find("a").filter((i, e) => e.href.indexOf("mapstatsid") > -1);
-                    findEntryStats(mapstatsurls)
-                })
             });
         }
 
@@ -427,31 +435,100 @@ function Crawler() {
         showMapStats(selectedMap);
     }
 
-    function findEntryStats(mapstatsurls) {
+    function collectEarlyAndLateRoundStats(mapstatsurls, $btn, resultTds) {
+        var numAll = mapstatsurls.length;
+        var numDone = 0;
+        $btn.parent().append("<div class='team_entries'>" + numDone + "/" + numAll + "</div>");
+        var $teamEntries = $btn.parent().find("div.team_entries");
+        $btn.remove();
         var promises = [];
         mapstatsurls.each((i, e) => {
-            promises.push(new Promise(resolve => {
-                crawler.queue(e.href).then((doc) => {
-                    var el = $('<div></div>');
-                    el.html(doc);
-                    resolve(getEntries(el));
-                })
-            }))
+            var queryPromise = queryMapstat(e);
+            promises.push(queryPromise);
+            queryPromise.then(() => { $teamEntries.text(++numDone + "/" + numAll) });
         })
 
+        var roundsPlayed = 0;
+        resultTds.each((i, td) => {
+            var txt = $(td).text();
+            var rounds = txt.split("-");
+            rounds = parseInt(rounds[0]) + parseInt(rounds[1]);
+            roundsPlayed += rounds;
+        });
+
         Promise.all(promises).then(values => {
-            console.log(values);
+            var sumEntries = 0;
+            var sumClutchesLost = 0;
+            values.forEach(e => {
+                sumEntries += e.entries;
+                sumClutchesLost += e.clutchesLost;
+            })
+            $teamEntries.html("<div class='columns'></div>");
+            var $teamEntriesColumnsDiv = $teamEntries.find("div.columns");
+            displayEntryStats($teamEntriesColumnsDiv, sumEntries, roundsPlayed);
+            displayClutchesLost($teamEntriesColumnsDiv, sumClutchesLost, mapstatsurls.length);
         })
     }
 
-    function getEntries(el) {
+    function displayClutchesLost($teamEntriesDiv, sum, mapsPlayed) {
+        var clutchesLostPerMatch = (sum/mapsPlayed).toFixed(1);
+        $teamEntriesDiv.append(`
+             <div class="col standard-box big-padding" style="padding: 5px 10px; font-size: 10px; text-align:left;">
+                <div class="large-strong" style="font-size: 12px; font-weight: bold;">${clutchesLostPerMatch}</div>
+                <div class="small-label-below">Avg. clutches lost per map</div>
+             </div>
+        `);
+    }
+
+    function displayEntryStats($teamEntriesDiv, sum, roundsPlayed) {
+        var entrySuccess = (sum/roundsPlayed*100).toFixed(1);
+        $teamEntriesDiv.append(`
+             <div class="col standard-box big-padding" style="padding: 5px 10px; font-size: 10px;text-align:left;">
+                <div class="large-strong" style="font-size: 12px; font-weight: bold;">${entrySuccess}%</div>
+                <div class="small-label-below">Entry success percentage based on rounds played</div>
+             </div>
+        `);
+    }
+
+    function queryMapstat(anchor) {
+        return new Promise(resolve => {
+            crawler.queue(anchor.href).then((doc) => {
+                var el = $('<div></div>');
+                var teamname = $(anchor).data("teamname");
+                el.html(doc);
+                resolve({
+                    entries: getEntries(el, teamname),
+                    clutchesLost: getClutchesLost(el, teamname)
+                });
+            })
+        })
+    }
+
+    function getEntries(el, actualTeamName) {
         var tl = el.find("div.team-left img.team-logo").attr('alt');
         var left = false;
-        if (tl === team1) {
+        if (tl === actualTeamName) {
             left = true;
         }
 
         var entries = el.find("div.match-info-row:nth(2)").text().trim();
+        var entryNum;
+        if(left) {
+            entryNum = entries.substr(0, entries.indexOf(":"));
+        } else {
+            entryNum = entries.substr(entries.indexOf(":") + 1, 3);
+        }
+        return parseInt(entryNum);
+    }
+
+    function getClutchesLost(el, actualTeamName) {
+        var tl = el.find("div.team-left img.team-logo").attr('alt');
+        var left = true;
+        if (tl === actualTeamName) {
+            left = false;
+        }
+
+        var entries = el.find("div.match-info-row:nth(3)").text().trim();
         var entryNum;
         if(left) {
             entryNum = entries.substr(0, entries.indexOf(":"));
@@ -496,8 +573,8 @@ function Crawler() {
                 renderAt: id,
                 containerBackgroundOpacity: 0,
                 heightOverride: false,
-                dataSource:{  
-                    chart:{  
+                dataSource:{
+                    chart:{
                         theme: "fint",
                         showLabels: 1,
                         showValues: 1,
@@ -520,7 +597,7 @@ function Crawler() {
                     categories: [{
                         category: [categories]}],
                     dataset: [
-                        timesPlayedDataset, 
+                        timesPlayedDataset,
                         mapWinPercentageDataset
                     ]
                 }
@@ -579,7 +656,7 @@ function Crawler() {
             })
         }
     }
-    
+
     addStatsButton();
     addOnlineStatsButton();
     addLanStatsButton();
