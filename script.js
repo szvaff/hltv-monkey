@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.2.0
+// @version      1.2.1
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -409,7 +409,7 @@ function Crawler() {
                 results.css(STYLES.RESULTS);
                 results.find("tr td:nth-child(3)").css(STYLES.RESULTS_RESULT_TD);
 
-                var earlyAndLateDiv = $("<div style='margin-top: 25px; text-align: center'></div>");
+                var earlyAndLateDiv = $("<div style='margin-top: 25px;text-align: center'></div>");
                 var $earlyLateBtn = $("<button id='entry_" + themap + "_" + teamNum + "'>Collect early and late round stats</button>");
                 earlyAndLateDiv.append($earlyLateBtn);
                 $earlyLateBtn.click(function() {
@@ -461,35 +461,53 @@ function Crawler() {
         });
 
         Promise.all(promises).then(values => {
-            var sumEntries = 0;
-            var sumClutchesLost = 0;
+            var sum = {
+                entries: 0,
+                clutchesLost: 0,
+                clutchesWon: 0,
+                teamRating: 0
+            }
             values.forEach(e => {
-                sumEntries += e.entries;
-                sumClutchesLost += e.clutchesLost;
+                sum.entries += e.entries;
+                sum.clutchesLost += e.clutchesLost;
+                sum.clutchesWon += e.clutchesWon;
+                sum.teamRating += e.teamRating;
             })
-            $teamEntries.html("<div class='columns'></div>");
-            var $teamEntriesColumnsDiv = $teamEntries.find("div.columns");
-            displayEntryStats($teamEntriesColumnsDiv, sumEntries, roundsPlayed);
-            displayClutchesLost($teamEntriesColumnsDiv, sumClutchesLost, mapstatsurls.length);
+            $teamEntries.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div>");
+            var $teamEntriesColumnsDiv = $teamEntries.find("div#monkey_entries");
+            var $teamClutchesColumnsDiv = $teamEntries.find("div#monkey_clutches");
+            displayEntryStats($teamEntriesColumnsDiv, sum.entries, roundsPlayed);
+            displayTeamRating($teamEntriesColumnsDiv, sum.teamRating, mapstatsurls.length);
+            displayClutchesLost($teamClutchesColumnsDiv, sum.clutchesLost, mapstatsurls.length);
+            displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, mapstatsurls.length);
         })
+    }
+
+    function displayTeamRating($teamEntriesDiv, sum, mapsPlayed) {
+        var rating = (sum/mapsPlayed).toFixed(1);
+        displayStat($teamEntriesDiv, rating, "Avg. team rating");
+    }
+
+    function displayClutchesWon($teamEntriesDiv, sum, mapsPlayed) {
+        var clutchesWonPerMatch = (sum/mapsPlayed).toFixed(1);
+        displayStat($teamEntriesDiv, clutchesWonPerMatch, "Avg. clutches won per map");
     }
 
     function displayClutchesLost($teamEntriesDiv, sum, mapsPlayed) {
         var clutchesLostPerMatch = (sum/mapsPlayed).toFixed(1);
-        $teamEntriesDiv.append(`
-             <div class="col standard-box big-padding" style="padding: 5px 10px; font-size: 10px; text-align:left;">
-                <div class="large-strong" style="font-size: 12px; font-weight: bold;">${clutchesLostPerMatch}</div>
-                <div class="small-label-below">Avg. clutches lost per map</div>
-             </div>
-        `);
+        displayStat($teamEntriesDiv, clutchesLostPerMatch, "Avg. clutches lost per map");
     }
 
     function displayEntryStats($teamEntriesDiv, sum, roundsPlayed) {
         var entrySuccess = (sum/roundsPlayed*100).toFixed(1);
+        displayStat($teamEntriesDiv, entrySuccess + "%", "Entry success percent based on rounds played");
+    }
+
+    function displayStat($teamEntriesDiv, num, str) {
         $teamEntriesDiv.append(`
              <div class="col standard-box big-padding" style="padding: 5px 10px; font-size: 10px;text-align:left;">
-                <div class="large-strong" style="font-size: 12px; font-weight: bold;">${entrySuccess}%</div>
-                <div class="small-label-below">Entry success percentage based on rounds played</div>
+                <div class="large-strong" style="font-size: 12px; font-weight: bold;">${num}</div>
+                <div class="small-label-below">${str}</div>
              </div>
         `);
     }
@@ -502,7 +520,9 @@ function Crawler() {
                 el.html(doc);
                 resolve({
                     entries: getEntries(el, teamname),
-                    clutchesLost: getClutchesLost(el, teamname)
+                    clutchesLost: getClutchesLost(el, teamname),
+                    clutchesWon: getClutchesWon(el, teamname),
+                    teamRating: getTeamRating(el, teamname)
                 });
             })
         })
@@ -532,14 +552,48 @@ function Crawler() {
             left = false;
         }
 
-        var entries = el.find("div.match-info-row:nth(3)").text().trim();
-        var entryNum;
+        var clutches = el.find("div.match-info-row:nth(3)").text().trim();
+        var clutchesLost;
         if(left) {
-            entryNum = entries.substr(0, entries.indexOf(":"));
+            clutchesLost = clutches.substr(0, clutches.indexOf(":"));
         } else {
-            entryNum = entries.substr(entries.indexOf(":") + 1, 3);
+            clutchesLost = clutches.substr(clutches.indexOf(":") + 1, 3);
         }
-        return parseInt(entryNum);
+        return parseInt(clutchesLost);
+    }
+
+    function getClutchesWon(el, actualTeamName) {
+        var tl = el.find("div.team-left img.team-logo").attr('alt');
+        var left = true;
+        if (tl === actualTeamName) {
+            left = false;
+        }
+
+        var clutches = el.find("div.match-info-row:nth(3)").text().trim();
+        var clutchesWon;
+        if(left) {
+            clutchesWon = clutches.substr(clutches.indexOf(":") + 1, 3);
+        } else {
+            clutchesWon = clutches.substr(0, clutches.indexOf(":"));
+        }
+        return parseInt(clutchesWon);
+    }
+
+    function getTeamRating(el, actualTeamName) {
+        var tl = el.find("div.team-left img.team-logo").attr('alt');
+        var left = true;
+        if (tl === actualTeamName) {
+            left = false;
+        }
+
+        var ratings = el.find("div.match-info-row:nth(1)").text().trim();
+        var rating;
+        if(left) {
+            rating = ratings.substr(ratings.indexOf(":") + 1, 3);
+        } else {
+            rating = ratings.substr(0, ratings.indexOf(":"));
+        }
+        return parseFloat(rating);
     }
 
     function addOverallStats(stats, statsDiv) {
