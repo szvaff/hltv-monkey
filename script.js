@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.2.1
+// @version      1.2.2
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -573,6 +573,7 @@ function Crawler() {
         var clutchesWon;
         if(left) {
             clutchesWon = clutches.substr(clutches.indexOf(":") + 1, 3);
+            console.log(clutchesWon)
         } else {
             clutchesWon = clutches.substr(0, clutches.indexOf(":"));
         }
@@ -589,7 +590,7 @@ function Crawler() {
         var ratings = el.find("div.match-info-row:nth(1)").text().trim();
         var rating;
         if(left) {
-            rating = ratings.substr(ratings.indexOf(":") + 1, 3);
+            rating = ratings.substr(ratings.indexOf(":") + 1);
         } else {
             rating = ratings.substr(0, ratings.indexOf(":"));
         }
