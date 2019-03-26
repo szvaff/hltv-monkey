@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.2.2
+// @version      1.2.3
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -484,7 +484,7 @@ function Crawler() {
     }
 
     function displayTeamRating($teamEntriesDiv, sum, mapsPlayed) {
-        var rating = (sum/mapsPlayed).toFixed(1);
+        var rating = (sum/mapsPlayed).toFixed(2);
         displayStat($teamEntriesDiv, rating, "Avg. team rating");
     }
 
