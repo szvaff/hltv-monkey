@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.2.3
+// @version      1.2.4
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -67,10 +67,11 @@ function Crawler() {
         Nuke: 34,
         Overpass: 40,
         Train: 35,
-        Dust2: 31
+        Dust2: 31,
+        Vertigo: 46
     };
 
-    var ALL_MAPS = ["Cache", "Inferno", "Mirage", "Nuke", "Overpass", "Train", "Dust2"];
+    var ALL_MAPS = ["Cache", "Inferno", "Mirage", "Nuke", "Overpass", "Train", "Dust2", "Vertigo"];
 
     var STYLES = {
         BIG_PADDING: {
