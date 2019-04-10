@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.1
+// @version      1.3.2
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -138,11 +138,15 @@ function Crawler() {
         }
     };
 
-    var MONTH_SELECTION_LS_KEY = 'hltv_monkey_month_selection';
+    var LOCALSTORAGE_KEYS = {
+        MONTH: 'hltv_monkey_month_selection',
+        MIN_LINEUP_MATCH: 'hltv_monkey_min_lineup_match'
+    };
+
     var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px;'></div>";
-    var MIN_LINEUP_MATCH = 4;
+    var MIN_LINEUP_MATCH = parseInt(localStorage.getItem(LOCALSTORAGE_KEYS.MIN_LINEUP_MATCH)) || 4;
     var MATCH_TYPE;
-    var DAYS = parseInt(localStorage.getItem(MONTH_SELECTION_LS_KEY)) || 90;
+    var DAYS = parseInt(localStorage.getItem(LOCALSTORAGE_KEYS.MONTH)) || 90;
     var URL_PREFIX_LINEUP_STATS = "https://www.hltv.org/stats/lineup/map/";
     var URL_PREFIX_LINEUP_MATCHES = "https://www.hltv.org/stats/lineup/matches/";
 
@@ -189,8 +193,16 @@ function Crawler() {
         }
     }
 
-    function createOptionElement(days, txt) {
-        return '<option ' + (days === DAYS ? 'selected' : '') + ' value="' + days + '">' + txt + '</option>';
+    function createOptionElement(value, txt, test) {
+        return '<option ' + (value === test ? 'selected' : '') + ' value="' + value + '">' + txt + '</option>';
+    };
+
+    function createMonthOptionElements() {
+        return createOptionElement(90, "Last 3 months", DAYS) + createOptionElement(60, "Last 2 months", DAYS) + createOptionElement(30, "Last month", DAYS);
+    };
+
+    function createPlayerOptionElements() {
+        return createOptionElement(1, 1, MIN_LINEUP_MATCH) + createOptionElement(2, 2, MIN_LINEUP_MATCH) + createOptionElement(3, 3, MIN_LINEUP_MATCH) + createOptionElement(4, 4, MIN_LINEUP_MATCH) + createOptionElement(5, 5, MIN_LINEUP_MATCH);
     };
 
     function addStatsButton() {
@@ -200,7 +212,8 @@ function Crawler() {
         }
 
         vetoBox.append("<div><input type='checkbox' id='exclude_matchday' /><label for='exclude_matchday'>Exclude matchday</label></div>");
-        vetoBox.append("<div>Load stats from: <select id='month_select'>" + createOptionElement(90, "Last 3 months") + createOptionElement(60, "Last 2 months") + createOptionElement(30, "Last month") + "</select><button id='save_selection'>Save selection</button></div>");
+        vetoBox.append("<div>Load stats from: <select id='month_select'>" + createMonthOptionElements() + "</select><a id='save_month_selection'>Save selection</a></div>");
+        vetoBox.append("<div>Min. players: <select id='min_lineup_select'>" + createPlayerOptionElements() + "</select><a id='save_lineup_selection'>Save selection</a></div>");
         vetoBox.append("<button id='statsbtn'>Stats</button>");
 
         $("#statsbtn").click(function() {
@@ -216,8 +229,16 @@ function Crawler() {
             DAYS = parseInt($(this).val());
         });
 
-        $("#save_selection").click(() => {
-            localStorage.setItem(MONTH_SELECTION_LS_KEY, DAYS);
+        $("#min_lineup_select").change(function() {
+            MIN_LINEUP_MATCH = parseInt($(this).val());
+        });
+
+        $("#save_month_selection").click(() => {
+            localStorage.setItem(LOCALSTORAGE_KEYS.MONTH, DAYS);
+        });
+
+        $("#save_lineup_selection").click(() => {
+            localStorage.setItem(LOCALSTORAGE_KEYS.MIN_LINEUP_MATCH, MIN_LINEUP_MATCH);
         });
     }
 
