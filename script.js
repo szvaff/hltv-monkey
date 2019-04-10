@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.2.4
+// @version      1.3.0
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -138,10 +138,11 @@ function Crawler() {
         }
     };
 
+    var MONTH_SELECTION_LS_KEY = 'hltv_monkey_month_selection';
     var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px;'></div>";
     var MIN_LINEUP_MATCH = 4;
     var MATCH_TYPE;
-    var DAYS = 90;
+    var DAYS = parseInt(localStorage.getItem(MONTH_SELECTION_LS_KEY)) || 90;
     var URL_PREFIX_LINEUP_STATS = "https://www.hltv.org/stats/lineup/map/";
     var URL_PREFIX_LINEUP_MATCHES = "https://www.hltv.org/stats/lineup/matches/";
 
@@ -188,12 +189,18 @@ function Crawler() {
         }
     }
 
+    function createOptionElement(days, txt) {
+        return '<option ' + (days === DAYS ? 'selected' : '') + ' value="' + days + '">' + txt + '</option>';
+    };
+
     function addStatsButton() {
         if (vetoBox.length === 0) {
             $('<div class="standard-box veto-box"></div>').insertBefore($("div.mapholder").parent());
             vetoBox = $("div.veto-box:first");
         }
+
         vetoBox.append("<div><input type='checkbox' id='exclude_matchday' /><label for='exclude_matchday'>Exclude matchday</label></div>");
+        vetoBox.append("<div>Load stats from: <select id='month_select'>" + createOptionElement(90, "Last 3 months") + createOptionElement(60, "Last 2 months") + createOptionElement(30, "Last month") + "</select><button id='save_selection'>Save selection</button></div>");
         vetoBox.append("<button id='statsbtn'>Stats</button>");
 
         $("#statsbtn").click(function() {
@@ -203,7 +210,15 @@ function Crawler() {
         $("#exclude_matchday").change(function() {
             var val = $(this).is(":checked");
             val ? minusDays = 1 : minusDays = 0;
-        })
+        });
+
+        $("#month_select").change(function() {
+            DAYS = parseInt($(this).val());
+        });
+
+        $("#save_selection").click(() => {
+            localStorage.setItem(MONTH_SELECTION_LS_KEY, DAYS);
+        });
     }
 
     function addOnlineStatsButton() {
