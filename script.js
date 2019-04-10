@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.0
+// @version      1.3.1
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -172,7 +172,7 @@ function Crawler() {
     });
 
     function getDateFilter() {
-        var to = unixDate;
+        var to = new Date(unixDate.getTime());
         to.setDate(to.getDate() - minusDays);
         var from = new Date(unixDate.getTime());
         from.setDate(from.getDate() - DAYS - minusDays);
