@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.2
+// @version      1.3.3
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -30,27 +30,27 @@ function Crawler() {
 
     function next() {
         return new Promise(resolve => {
+            if(inProgress !== null) {
+                inProgress.promise.then(() => {
+                    next();
+                })
+                return;
+            }
+
+            if (queue.length === 0) {
+                resolve();
+                return;
+            }
+
+            inProgress = queue[0];
             setTimeout(() => {
-                if(inProgress !== null) {
-                    inProgress.promise.then(() => {
-                        next();
-                    })
-                    return;
-                }
-
-                if (queue.length === 0) {
-                    resolve();
-                    return;
-                }
-
-                inProgress = queue[0];
                 $.get(inProgress.url).then(result => {
                     resolve(result);
                     inProgress.resolve(result);
                     queue.splice(0,1);
                     inProgress = null;
                 })
-            }, Math.floor(Math.random()*2000))
+            }, Math.floor(Math.random()*1000) + 1000)
         })
     }
 
@@ -143,7 +143,7 @@ function Crawler() {
         MIN_LINEUP_MATCH: 'hltv_monkey_min_lineup_match'
     };
 
-    var STATS_DIV = "<div style='display: inline-block; max-width: 45%; padding:5px;'></div>";
+    var STATS_DIV = "<div style='display: inline-block; width: 45%; padding:5px;'><div id='progress' style='text-align: center;position: relative; margin: 25px 0;'><div id='linebg' style='width: 100%;height: 5px;background: #aaaaaa;'></div><div id='line' style='transition: width 1s;height: 5px;position: absolute;top: 0px;background-image: linear-gradient(to right, #0075c2 , #1aaf5d);'></div><div id='percentage'>0%</div></div></div>";
     var MIN_LINEUP_MATCH = parseInt(localStorage.getItem(LOCALSTORAGE_KEYS.MIN_LINEUP_MATCH)) || 4;
     var MATCH_TYPE;
     var DAYS = parseInt(localStorage.getItem(LOCALSTORAGE_KEYS.MONTH)) || 90;
@@ -166,6 +166,8 @@ function Crawler() {
     var matchId = null;
     var minusDays = 0;
     var crawler = new Crawler();
+    var t1Done = 0;
+    var t2Done = 0;
 
     $("div.mapholder div.mapname").each(function(index, el) {
         if (el.innerText !== "TBA") {
@@ -315,6 +317,12 @@ function Crawler() {
         });
     }
 
+    function progress($div, done) {
+        var percentage = (done / ALL_MAPS.length * 100).toFixed(0) + "%";
+        $div.find("#percentage").text(percentage);
+        $div.find("#line").width(percentage);
+    }
+
     function queryStats() {
         if (maps.length === 0) {
             maps = ALL_MAPS;
@@ -330,8 +338,18 @@ function Crawler() {
             var url2 = getLineupStatsUrlForMap(playersTeam2, map);
             urls1.push(url1);
             urls2.push(url2);
-            urlPromises1.push($.get(url1));
-            urlPromises2.push($.get(url2));
+            var p1 = crawler.queue(url1);
+            var p2 = crawler.queue(url2);
+            urlPromises1.push(p1);
+            urlPromises2.push(p2);
+
+            p1.then(() => {
+                progress($statsDiv1.find("#progress"), ++t1Done);
+            });
+
+            p2.then(() => {
+                progress($statsDiv2.find("#progress"), ++t2Done);
+            });
         }
 
         $statsDiv1 = $(STATS_DIV);
@@ -342,10 +360,12 @@ function Crawler() {
 
         Promise.all(urlPromises1).then(function(result) {
             appendStats(result, urls1, $statsDiv1, 1);
+            $statsDiv1.find("#progress").remove();
         });
 
         Promise.all(urlPromises2).then(function(result) {
             appendStats(result, urls2, $statsDiv2, 2);
+            $statsDiv2.find("#progress").remove();
         });
     }
 
