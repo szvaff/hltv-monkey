@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.3
+// @version      1.3.4
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -50,7 +50,7 @@ function Crawler() {
                     queue.splice(0,1);
                     inProgress = null;
                 })
-            }, Math.floor(Math.random()*1000) + 1000)
+            }, 500)
         })
     }
 
@@ -361,11 +361,15 @@ function Crawler() {
         Promise.all(urlPromises1).then(function(result) {
             appendStats(result, urls1, $statsDiv1, 1);
             $statsDiv1.find("#progress").remove();
+        }).catch(() => {
+            $statsDiv1.find("#progress").html("Error occured.");
         });
 
         Promise.all(urlPromises2).then(function(result) {
             appendStats(result, urls2, $statsDiv2, 2);
             $statsDiv2.find("#progress").remove();
+        }).catch(() => {
+            $statsDiv2.find("#progress").html("Error occured.");
         });
     }
 
