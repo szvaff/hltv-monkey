@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.4
+// @version      1.3.5
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -323,15 +323,70 @@ function Crawler() {
         $div.find("#line").width(percentage);
     }
 
+    function equals(obj1, obj2) {
+        return JSON.stringify(obj1) === JSON.stringify(obj2);
+    }
+
     function queryStats() {
         if (maps.length === 0) {
             maps = ALL_MAPS;
         }
+        var connection = getIndexedDbConnection();
+        prepareStatsDivs();
+        connection.onsuccess = function() {
+            var db = this.result;
+            var id = getMatchId();
+            var tx = db.transaction('stats', 'readonly');
+            var store = tx.objectStore('stats');
+            var readTx = store.get(id);
+            readTx.onsuccess = function() {
+                if (!this.result) {
+                    doQueryStats();
+                    return;
+                }
 
+                if (!equals(this.result.settings, getSettings())
+                    || !equals(this.result.pastMatches.team1, pastMatches.team1)
+                    || !equals(this.result.pastMatches.team2, pastMatches.team2)) {
+                    doQueryStats();
+                    return;
+                }
+
+                $statsDiv1.find("#progress").remove();
+                $statsDiv2.find("#progress").remove();
+                var urls1 = [];
+                var urls2 = [];
+                for (var i = 0; i < ALL_MAPS.length; i++) {
+                    var map = ALL_MAPS[i];
+                    var url1 = getLineupStatsUrlForMap(playersTeam1, map);
+                    var url2 = getLineupStatsUrlForMap(playersTeam2, map);
+                    urls1.push(url1);
+                    urls2.push(url2);
+                }
+                appendStats(this.result.stats.team1, urls1, $statsDiv1, 1);
+                appendStats(this.result.stats.team2, urls2, $statsDiv2, 2);
+            }
+
+            readTx.onerror = function() {
+                doQueryStats();
+            }
+        }
+    }
+
+    function prepareStatsDivs() {
+        $statsDiv1 = $(STATS_DIV);
+        $statsDiv2 = $(STATS_DIV);
+        var $statsContainer = $(".flexbox.fix-half-width-margin.maps");
+        $statsContainer.append($statsDiv1);
+        $statsContainer.append($statsDiv2);
+    }
+
+    function doQueryStats() {
         var urlPromises1 = [];
         var urlPromises2 = [];
         var urls1 = [];
         var urls2 = [];
+        t1Done = 0, t2Done = 0;
         for (var i = 0; i < ALL_MAPS.length; i++) {
             var map = ALL_MAPS[i];
             var url1 = getLineupStatsUrlForMap(playersTeam1, map);
@@ -352,14 +407,9 @@ function Crawler() {
             });
         }
 
-        $statsDiv1 = $(STATS_DIV);
-        $statsDiv2 = $(STATS_DIV);
-        var $statsContainer = $(".flexbox.fix-half-width-margin.maps");
-        $statsContainer.append($statsDiv1);
-        $statsContainer.append($statsDiv2);
-
         Promise.all(urlPromises1).then(function(result) {
             appendStats(result, urls1, $statsDiv1, 1);
+            storeStats(result, 1);
             $statsDiv1.find("#progress").remove();
         }).catch(() => {
             $statsDiv1.find("#progress").html("Error occured.");
@@ -367,6 +417,7 @@ function Crawler() {
 
         Promise.all(urlPromises2).then(function(result) {
             appendStats(result, urls2, $statsDiv2, 2);
+            storeStats(result, 2);
             $statsDiv2.find("#progress").remove();
         }).catch(() => {
             $statsDiv2.find("#progress").html("Error occured.");
@@ -734,21 +785,33 @@ function Crawler() {
         return matchId;
     }
 
-    function addNotepad() {
+    function getIndexedDbConnection() {
         if (!('indexedDB' in window)) {
             console.log('This browser doesn\'t support IndexedDB');
             return;
         }
 
-        var connection = indexedDB.open('hltv-monkey', 1);
+        var connection = indexedDB.open('hltv-monkey', 2);
+
+        connection.onerror = function() {
+            console.log(this);
+        }
 
         connection.onupgradeneeded = function () {
             var db = this.result;
             if (!db.objectStoreNames.contains('notes')) {
                 db.createObjectStore('notes', { keyPath: 'id' });
             }
+            if (!db.objectStoreNames.contains('stats')) {
+                db.createObjectStore('stats', { keyPath: 'id' });
+            }
         }
 
+        return connection;
+    }
+
+    function addNotepad() {
+        var connection = getIndexedDbConnection();
         connection.onsuccess = function () {
             var db = this.result;
             vetoBox.append('<div id="notepad-wrapper" class="padding"><div>Notes</div><textarea id="notepad"></textarea></div>')
@@ -776,6 +839,47 @@ function Crawler() {
             })
         }
     }
+
+    function storeStats(stats, teamNum) {
+        var connection = getIndexedDbConnection();
+        connection.onsuccess = function() {
+            var db = this.result;
+            var team = "team" + teamNum;
+            var matchId = getMatchId();
+            var tx = db.transaction('stats', 'readwrite');
+            var store = tx.objectStore('stats');
+            var readTx = store.get(matchId);
+            readTx.onsuccess = readTx.onerror = function() {
+                doStoreStats(this.result, team, stats, store);
+            }
+        }
+    };
+
+    function doStoreStats(obj, team, stats, store) {
+        obj = obj || { id: matchId };
+        obj.stats = obj.stats || {};
+        obj.stats[team] = stats;
+        obj.settings = getSettings();
+        obj.pastMatches = obj.pastMatches || {};
+        obj.pastMatches[team] = pastMatches[team];
+        store.put(obj);
+    };
+
+    function getSettings() {
+        return {
+            minusDays: minusDays,
+            minLineupMatch: MIN_LINEUP_MATCH,
+            days: DAYS
+        };
+    }
+
+    var pastMatches = (function findPastMatches() {
+        var tables = $(".past-matches table");
+        return {
+            team1: tables[0].innerHTML,
+            team2: tables[1].innerHTML
+        }
+    })();
 
     addStatsButton();
     addOnlineStatsButton();
