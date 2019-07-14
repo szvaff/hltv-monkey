@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.5
+// @version      1.3.6
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -154,8 +154,15 @@ function Crawler() {
     var vetoBox = $("div.veto-box:first");
     var unixDate = new Date(parseInt($("div.date").attr("data-unix")));
     var lineupsDivs = $("div.lineups div.lineup");
-    var playersTeam1 = $(lineupsDivs[0]).find(".players").find("td.player a");
-    var playersTeam2 = $(lineupsDivs[1]).find(".players").find("td.player a");
+    var playersTeam1, playersTeam2;
+    if ($("[data-team1-players-data]").length > 0) {
+        playersTeam1 = JSON.parse($("[data-team1-players-data]")[0].attributes["data-team1-players-data"].nodeValue)
+        playersTeam2 = JSON.parse($("[data-team2-players-data]")[0].attributes["data-team2-players-data"].nodeValue)
+    } else {
+        playersTeam1 = $(lineupsDivs[0]).find(".players").find("td.player a");
+        playersTeam2 = $(lineupsDivs[1]).find(".players").find("td.player a");
+    }
+
     var team1 = $("div.teamName")[0].innerText;
     var team2 = $("div.teamName")[1].innerText;
     var $statsDiv1;
@@ -269,9 +276,16 @@ function Crawler() {
 
     function getLineupStatsUrlForMap(playersTeam, map) {
         var baseUrl = URL_PREFIX_LINEUP_STATS + MAP_ID[map] + "?";
-        for (var i = 0; i < 5; i++) {
-            var href1 = playersTeam[i].href.substring(playersTeam[i].href.indexOf("/player/") + "/player/".length, playersTeam[i].href.lastIndexOf("/"));
-            baseUrl += "lineup=" + href1 + "&";
+        
+        if (playersTeam.length > 5) {
+            for (var i = 0; i < 5; i++) {
+                var href1 = playersTeam[i].href.substring(playersTeam[i].href.indexOf("/player/") + "/player/".length, playersTeam[i].href.lastIndexOf("/"));
+                baseUrl += "lineup=" + href1 + "&";
+            }
+        } else {
+            for (var item in playersTeam) {
+                baseUrl += "lineup=" + item + "&";
+            }
         }
 
         return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + getDateFilter() + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
@@ -279,9 +293,15 @@ function Crawler() {
 
     function getLineupMatchesUrl(playersTeam) {
         var baseUrl = URL_PREFIX_LINEUP_MATCHES + "?";
-        for (var i = 0; i < 5; i++) {
-            var href1 = playersTeam[i].href.substring(playersTeam[i].href.indexOf("/player/") + "/player/".length, playersTeam[i].href.lastIndexOf("/"));
-            baseUrl += "lineup=" + href1 + "&";
+        if (playersTeam.length > 5) {
+            for (var i = 0; i < 5; i++) {
+                var href1 = playersTeam[i].href.substring(playersTeam[i].href.indexOf("/player/") + "/player/".length, playersTeam[i].href.lastIndexOf("/"));
+                baseUrl += "lineup=" + href1 + "&";
+            }
+        } else {
+            for (var item in playersTeam) {
+                baseUrl += "lineup=" + item + "&";
+            }
         }
 
         return baseUrl + "minLineupMatch=" + MIN_LINEUP_MATCH + "&" + getDateFilter() + ( MATCH_TYPE == null ? "" : "&matchType=" + MATCH_TYPE);
