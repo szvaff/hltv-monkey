@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.7
+// @version      1.3.8
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -98,7 +98,8 @@ function Crawler() {
             'width' : '100%',
             'font-size': '0',
             'background-color': '#fff',
-            'margin-top': "10px"
+            'margin-top': "10px",
+            'padding-left': '13px'
         },
         MAP_CHANGER_ITEM: {
             'display': 'inline-block',
@@ -141,7 +142,7 @@ function Crawler() {
         MIN_LINEUP_MATCH: 'hltv_monkey_min_lineup_match'
     };
 
-    var STATS_DIV = "<div style='display: inline-block; width: 45%; padding:5px;'><div id='progress' style='text-align: center;position: relative; margin: 25px 0;'><div id='linebg' style='width: 100%;height: 5px;background: #aaaaaa;'></div><div id='line' style='transition: width 1s;height: 5px;position: absolute;top: 0px;background-image: linear-gradient(to right, #0075c2 , #1aaf5d);'></div><div id='percentage'>0%</div></div></div>";
+    var STATS_DIV = "<div style='display: inline-block; width: 45%;' class='col-6'><div id='progress' style='text-align: center;position: relative; margin: 25px 0;'><div id='linebg' style='width: 100%;height: 5px;background: #aaaaaa;'></div><div id='line' style='transition: width 1s;height: 5px;position: absolute;top: 0px;background-image: linear-gradient(to right, #0075c2 , #1aaf5d);'></div><div id='percentage'>0%</div></div></div>";
     var MIN_LINEUP_MATCH = parseInt(localStorage.getItem(LOCALSTORAGE_KEYS.MIN_LINEUP_MATCH)) || 4;
     var MATCH_TYPE;
     var DAYS = parseInt(localStorage.getItem(LOCALSTORAGE_KEYS.MONTH)) || 90;
