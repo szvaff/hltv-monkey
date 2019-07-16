@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.6
+// @version      1.3.7
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
@@ -120,8 +120,6 @@ function Crawler() {
             'position' : 'relative'
         },
         MATCHES_URL: {
-            'position' : 'absolute',
-            'right': '10px'
         },
         RESULTS: {
             'margin-top': '25px'
@@ -396,7 +394,7 @@ function Crawler() {
     function prepareStatsDivs() {
         $statsDiv1 = $(STATS_DIV);
         $statsDiv2 = $(STATS_DIV);
-        var $statsContainer = $(".flexbox.fix-half-width-margin.maps");
+        var $statsContainer = $(".g-grid.maps");
         $statsContainer.append($statsDiv1);
         $statsContainer.append($statsDiv2);
     }
