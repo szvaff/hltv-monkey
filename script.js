@@ -1,11 +1,14 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.8
+// @version      1.3.9
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
 // @require http://code.jquery.com/jquery-latest.js
+// @require https://raw.githubusercontent.com/fusioncharts/fusioncharts-dist/develop/fusioncharts.js
+// @require https://raw.githubusercontent.com/fusioncharts/fusioncharts-dist/develop/fusioncharts.charts.js
+// @require https://raw.githubusercontent.com/fusioncharts/fusioncharts-dist/develop/themes/fusioncharts.theme.fint.js
 // ==/UserScript==
 
 function Crawler() {
@@ -754,7 +757,7 @@ function Crawler() {
                 value: stat.timesPlayed
             });
         }
-
+console.log(categories)
         FusionCharts.ready(function () {
             new FusionCharts({
                 width: "100%",
@@ -785,7 +788,7 @@ function Crawler() {
                         animation: 0
                     },
                     categories: [{
-                        category: [categories]}],
+                        category: categories}],
                     dataset: [
                         timesPlayedDataset,
                         mapWinPercentageDataset
