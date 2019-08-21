@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
-// @version      1.3.9
+// @version      1.3.10
 // @description  Script to load team statistics in one click and more
 // @author       sZVAFF
 // @match        https://www.hltv.org/matches/*
 // @require http://code.jquery.com/jquery-latest.js
-// @require https://raw.githubusercontent.com/fusioncharts/fusioncharts-dist/develop/fusioncharts.js
-// @require https://raw.githubusercontent.com/fusioncharts/fusioncharts-dist/develop/fusioncharts.charts.js
-// @require https://raw.githubusercontent.com/fusioncharts/fusioncharts-dist/develop/themes/fusioncharts.theme.fint.js
+// @require https://cdn.jsdelivr.net/npm/fusioncharts@3.14.0-sr.1/fusioncharts.js
+// @require https://cdn.jsdelivr.net/npm/fusioncharts@3.14.0-sr.1/fusioncharts.charts.js
+// @require https://cdn.jsdelivr.net/npm/fusioncharts@3.14.0-sr.1/themes/fusioncharts.theme.fint.js
 // ==/UserScript==
 
 function Crawler() {
