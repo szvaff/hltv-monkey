@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         HLTV Monkey2
+// @name         HLTV Monkey
 // @namespace    https://www.hltv.org/matches/*
 // @version      2.0.0
 // @description  Script to load team statistics in one click and more
