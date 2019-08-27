@@ -2,11 +2,21 @@ import $ from 'jquery'
 import { STYLES } from '../shared/constants';
 import MatchDataService from '../shared/services/MatchDataService';
 import HLTVMonkey from '../shared/services/HLTVMonkey';
+import { getSettings } from '../shared/utils/common';
+import IndexedDbService from '../shared/services/IndexedDbService';
 
 
 export default class TeamStats {
 
   constructor(result, urls, statsDiv, teamNum) {
+    this.pastMatches = (function findPastMatches() {
+      var tables = $(".past-matches table");
+      return {
+        team1: tables[0].innerHTML,
+        team2: tables[1].innerHTML
+      }
+    })();
+
     return new Promise(resolve => {
       var overallStats = [];
 
@@ -58,14 +68,7 @@ export default class TeamStats {
           results.find("tr td:nth-child(3)").css(STYLES.RESULTS_RESULT_TD);
 
           var earlyAndLateDiv = $("<div style='margin-top: 25px;text-align: center'></div>");
-          var $earlyLateBtn = $("<button id='entry_" + themap + "_" + teamNum + "'>Collect early and late round stats</button>");
-          earlyAndLateDiv.append($earlyLateBtn);
-          $earlyLateBtn.click(function() {
-            var mapstatsurls = $(this).parent().siblings("table").find("a").filter((i, e) => e.href.indexOf("mapstatsid") > -1);
-            var resultTds = $(this).parent().siblings("table").find("td.statsTeamMapResult");
-            self.collectEarlyAndLateRoundStats(mapstatsurls, $earlyLateBtn, resultTds)
-          })
-
+          self.prepareEarlyAndLateRoundStats({ themap, teamNum, earlyAndLateDiv });
           var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(earlyAndLateDiv).append(results);
           toAppend.find(".big-padding").css(STYLES.BIG_PADDING);
           toAppend.find(".large-strong").css(STYLES.LARGE_STRONG);
@@ -86,6 +89,65 @@ export default class TeamStats {
       this.addOverallStats(overallStats, statsDiv);
       resolve()
     })
+  }
+
+  prepareEarlyAndLateRoundStats({ themap, teamNum, earlyAndLateDiv }) {
+    var connection = IndexedDbService.getIndexedDbConnection();
+    var self = this;
+    connection.onsuccess = function() {
+      var db = this.result;
+      var id = MatchDataService.getMatchId();
+      var tx = db.transaction('teamstats', 'readonly');
+      var store = tx.objectStore('teamstats');
+      var team = "team" + teamNum;
+      var readTx = store.get(`${id}-${team}`);
+      readTx.onsuccess = function() {
+        if (!this.result) {
+          self.addEarlyAndLateBtn({ themap, teamNum, earlyAndLateDiv });
+          return;
+        }
+        self.displayEarlyAndLateRoundStats(this.result.stats, earlyAndLateDiv)
+      }
+
+      readTx.onerror = function() {
+        self.addEarlyAndLateBtn({ themap, teamNum, earlyAndLateDiv });
+      }
+    }
+  }
+
+  addEarlyAndLateBtn({ themap, teamNum, earlyAndLateDiv }) {
+    var self = this
+    var $earlyLateBtn = $("<button id='entry_" + themap + "_" + teamNum + "'>Collect early and late round stats</button>");
+    earlyAndLateDiv.append($earlyLateBtn);
+    $earlyLateBtn.click(function() {
+      var mapstatsurls = $(this).parent().siblings("table").find("a").filter((i, e) => e.href.indexOf("mapstatsid") > -1);
+      var resultTds = $(this).parent().siblings("table").find("td.statsTeamMapResult");
+      self.collectEarlyAndLateRoundStats(mapstatsurls, $earlyLateBtn, resultTds, teamNum)
+    })
+  }
+
+  storeStats(stats, teamNum) {
+    var connection = IndexedDbService.getIndexedDbConnection();
+    var self = this;
+    connection.onsuccess = function() {
+      var db = this.result;
+      var team = "team" + teamNum;
+      var matchId = MatchDataService.getMatchId();
+      var tx = db.transaction('teamstats', 'readwrite');
+      var store = tx.objectStore('teamstats');
+      var readTx = store.get(`${matchId}-${team}`);
+      readTx.onsuccess = readTx.onerror = function() {
+        self.doStoreStats(this.result, team, stats, store);
+      }
+    }
+  }
+
+  doStoreStats(obj, team, stats, store) {
+    obj = obj || { id: `${MatchDataService.getMatchId()}-${team}` };
+    obj.stats = stats;
+    obj.settings = getSettings();
+    obj.pastMatches = this.pastMatches[team];
+    store.put(obj);
   }
 
   addOverallStats(stats, statsDiv) {
@@ -155,7 +217,7 @@ export default class TeamStats {
     });
   }
 
-  collectEarlyAndLateRoundStats(mapstatsurls, $btn, resultTds) {
+  collectEarlyAndLateRoundStats(mapstatsurls, $btn, resultTds, teamNum) {
     var numAll = mapstatsurls.length;
     var numDone = 0;
     $btn.parent().append("<div class='team_entries'>" + numDone + "/" + numAll + "</div>");
@@ -177,26 +239,37 @@ export default class TeamStats {
     });
 
     Promise.all(promises).then(values => {
-      var sum = {
-        entries: 0,
-        clutchesLost: 0,
-        clutchesWon: 0,
-        teamRating: 0
+      var stats = {
+        stats: values,
+        roundsPlayed,
+        mapsPlayed: mapstatsurls.length
       }
-      values.forEach(e => {
-        sum.entries += e.entries;
-        sum.clutchesLost += e.clutchesLost;
-        sum.clutchesWon += e.clutchesWon;
-        sum.teamRating += e.teamRating;
-      })
-      $teamEntries.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div>");
-      var $teamEntriesColumnsDiv = $teamEntries.find("div#monkey_entries");
-      var $teamClutchesColumnsDiv = $teamEntries.find("div#monkey_clutches");
-      this.displayEntryStats($teamEntriesColumnsDiv, sum.entries, roundsPlayed);
-      this.displayTeamRating($teamEntriesColumnsDiv, sum.teamRating, mapstatsurls.length);
-      this.displayClutchesLost($teamClutchesColumnsDiv, sum.clutchesLost, mapstatsurls.length);
-      this.displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, mapstatsurls.length);
+      this.displayEarlyAndLateRoundStats(stats, $teamEntries)
+      this.storeStats(stats, teamNum)
     })
+  }
+
+  displayEarlyAndLateRoundStats(values, $target) {
+    var sum = {
+      entries: 0,
+      clutchesLost: 0,
+      clutchesWon: 0,
+      teamRating: 0
+    }
+    for (var item in values.stats) {
+      var e = values.stats[item]
+      sum.entries += e.entries;
+      sum.clutchesLost += e.clutchesLost;
+      sum.clutchesWon += e.clutchesWon;
+      sum.teamRating += e.teamRating;
+    }
+    $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div>");
+    var $teamEntriesColumnsDiv = $target.find("div#monkey_entries");
+    var $teamClutchesColumnsDiv = $target.find("div#monkey_clutches");
+    this.displayEntryStats($teamEntriesColumnsDiv, sum.entries, values.roundsPlayed);
+    this.displayTeamRating($teamEntriesColumnsDiv, sum.teamRating, values.mapsPlayed);
+    this.displayClutchesLost($teamClutchesColumnsDiv, sum.clutchesLost, values.mapsPlayed);
+    this.displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, values.mapsPlayed);
   }
 
   displayTeamRating($teamEntriesDiv, sum, mapsPlayed) {

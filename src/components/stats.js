@@ -4,7 +4,7 @@ import SettingsService from "../shared/services/SettingsService";
 import IndexedDbService from "../shared/services/IndexedDbService";
 import MatchDataService from "../shared/services/MatchDataService";
 import { ALL_MAPS, STATS_DIV, STYLES } from "../shared/constants";
-import { equals } from '../shared/utils/common'
+import { equals, getSettings } from '../shared/utils/common'
 import TeamStats from './team-stats';
 
 export class Stats {
@@ -71,7 +71,7 @@ export class Stats {
           return;
         }
 
-        if (!equals(this.result.settings, self.getSettings())
+        if (!equals(this.result.settings, getSettings())
           || !equals(this.result.pastMatches.team1, self.pastMatches.team1)
           || !equals(this.result.pastMatches.team2, self.pastMatches.team2)) {
           self.doQueryStats();
@@ -213,7 +213,7 @@ export class Stats {
     obj = obj || { id: MatchDataService.getMatchId() };
     obj.stats = obj.stats || {};
     obj.stats[team] = stats;
-    obj.settings = this.getSettings();
+    obj.settings = getSettings();
     obj.pastMatches = obj.pastMatches || {};
     obj.pastMatches[team] = this.pastMatches[team];
     store.put(obj);
@@ -223,13 +223,5 @@ export class Stats {
     var percentage = (done / ALL_MAPS.length * 100).toFixed(0) + "%";
     $div.find("#percentage").text(percentage);
     $div.find("#line").width(percentage);
-  }
-
-  getSettings() {
-    return {
-      minusDays: SettingsService.minusDays,
-      minLineupMatch: SettingsService.minLineupMatch,
-      days: SettingsService.days
-    };
   }
 }

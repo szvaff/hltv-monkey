@@ -5,7 +5,7 @@ class IndexedDbService {
       return;
     }
 
-    var connection = indexedDB.open('hltv-monkey', 2);
+    var connection = indexedDB.open('hltv-monkey', 5);
 
     connection.onerror = function() {
       console.log(this);
@@ -18,6 +18,9 @@ class IndexedDbService {
       }
       if (!db.objectStoreNames.contains('stats')) {
         db.createObjectStore('stats', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('teamstats')) {
+        db.createObjectStore('teamstats', { keyPath: 'id' });
       }
     }
 
