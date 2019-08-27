@@ -100,7 +100,7 @@ export default class TeamStats {
       var tx = db.transaction('teamstats', 'readonly');
       var store = tx.objectStore('teamstats');
       var team = "team" + teamNum;
-      var readTx = store.get(`${id}-${team}`);
+      var readTx = store.get(`${id}-${team}-${themap}`);
       readTx.onsuccess = function() {
         if (!this.result) {
           self.addEarlyAndLateBtn({ themap, teamNum, earlyAndLateDiv });
@@ -122,11 +122,11 @@ export default class TeamStats {
     $earlyLateBtn.click(function() {
       var mapstatsurls = $(this).parent().siblings("table").find("a").filter((i, e) => e.href.indexOf("mapstatsid") > -1);
       var resultTds = $(this).parent().siblings("table").find("td.statsTeamMapResult");
-      self.collectEarlyAndLateRoundStats(mapstatsurls, $earlyLateBtn, resultTds, teamNum)
+      self.collectEarlyAndLateRoundStats(mapstatsurls, $earlyLateBtn, resultTds, teamNum, themap)
     })
   }
 
-  storeStats(stats, teamNum) {
+  storeStats(stats, teamNum, themap) {
     var connection = IndexedDbService.getIndexedDbConnection();
     var self = this;
     connection.onsuccess = function() {
@@ -135,15 +135,15 @@ export default class TeamStats {
       var matchId = MatchDataService.getMatchId();
       var tx = db.transaction('teamstats', 'readwrite');
       var store = tx.objectStore('teamstats');
-      var readTx = store.get(`${matchId}-${team}`);
+      var readTx = store.get(`${matchId}-${team}-${themap}`);
       readTx.onsuccess = readTx.onerror = function() {
-        self.doStoreStats(this.result, team, stats, store);
+        self.doStoreStats(this.result, team, stats, store, themap);
       }
     }
   }
 
-  doStoreStats(obj, team, stats, store) {
-    obj = obj || { id: `${MatchDataService.getMatchId()}-${team}` };
+  doStoreStats(obj, team, stats, store, themap) {
+    obj = obj || { id: `${MatchDataService.getMatchId()}-${team}-${themap}` };
     obj.stats = stats;
     obj.settings = getSettings();
     obj.pastMatches = this.pastMatches[team];
@@ -217,7 +217,7 @@ export default class TeamStats {
     });
   }
 
-  collectEarlyAndLateRoundStats(mapstatsurls, $btn, resultTds, teamNum) {
+  collectEarlyAndLateRoundStats(mapstatsurls, $btn, resultTds, teamNum, themap) {
     var numAll = mapstatsurls.length;
     var numDone = 0;
     $btn.parent().append("<div class='team_entries'>" + numDone + "/" + numAll + "</div>");
@@ -245,7 +245,7 @@ export default class TeamStats {
         mapsPlayed: mapstatsurls.length
       }
       this.displayEarlyAndLateRoundStats(stats, $teamEntries)
-      this.storeStats(stats, teamNum)
+      this.storeStats(stats, teamNum, themap)
     })
   }
 

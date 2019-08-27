@@ -5,7 +5,7 @@ class IndexedDbService {
       return;
     }
 
-    var connection = indexedDB.open('hltv-monkey', 5);
+    var connection = indexedDB.open('hltv-monkey', 6);
 
     connection.onerror = function() {
       console.log(this);
