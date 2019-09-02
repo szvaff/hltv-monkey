@@ -1,9 +1,9 @@
 import $ from 'jquery'
 import { STYLES } from '../shared/constants';
 import MatchDataService from '../shared/services/MatchDataService';
-import HLTVMonkey from '../shared/services/HLTVMonkey';
 import { getSettings } from '../shared/utils/common';
 import IndexedDbService from '../shared/services/IndexedDbService';
+import MatchStatService from '../shared/services/MatchStatService';
 
 
 export default class TeamStats {
@@ -67,9 +67,9 @@ export default class TeamStats {
           results.css(STYLES.RESULTS);
           results.find("tr td:nth-child(3)").css(STYLES.RESULTS_RESULT_TD);
 
-          var earlyAndLateDiv = $("<div style='margin-top: 25px;text-align: center'></div>");
-          self.prepareEarlyAndLateRoundStats({ themap, teamNum, earlyAndLateDiv });
-          var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(earlyAndLateDiv).append(results);
+          var moreInfoDiv = $("<div style='margin-top: 25px;text-align: center'></div>");
+          self.prepareMoreInfoStats({ themap, teamNum, moreInfoDiv });
+          var toAppend = $("<div class='mapstat " + themap + "' style='margin-top:10px'></div>").append(parent).append(stats).append(graph).append(next).append(moreInfoDiv).append(results);
           toAppend.find(".big-padding").css(STYLES.BIG_PADDING);
           toAppend.find(".large-strong").css(STYLES.LARGE_STRONG);
 
@@ -91,7 +91,7 @@ export default class TeamStats {
     })
   }
 
-  prepareEarlyAndLateRoundStats({ themap, teamNum, earlyAndLateDiv }) {
+  prepareMoreInfoStats({ themap, teamNum, moreInfoDiv }) {
     var connection = IndexedDbService.getIndexedDbConnection();
     var self = this;
     connection.onsuccess = function() {
@@ -103,26 +103,26 @@ export default class TeamStats {
       var readTx = store.get(`${id}-${team}-${themap}`);
       readTx.onsuccess = function() {
         if (!this.result) {
-          self.addEarlyAndLateBtn({ themap, teamNum, earlyAndLateDiv });
+          self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
           return;
         }
-        self.displayEarlyAndLateRoundStats(this.result.stats, earlyAndLateDiv)
+        self.displayDetailedMapStats(this.result.stats, moreInfoDiv, themap, teamNum)
       }
 
       readTx.onerror = function() {
-        self.addEarlyAndLateBtn({ themap, teamNum, earlyAndLateDiv });
+        self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
       }
     }
   }
 
-  addEarlyAndLateBtn({ themap, teamNum, earlyAndLateDiv }) {
+  addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv }) {
     var self = this
-    var $earlyLateBtn = $("<button id='entry_" + themap + "_" + teamNum + "'>Collect early and late round stats</button>");
-    earlyAndLateDiv.append($earlyLateBtn);
-    $earlyLateBtn.click(function() {
+    var $btn = $("<button id='entry_" + themap + "_" + teamNum + "'>Collect detailed map stats</button>");
+    moreInfoDiv.append($btn);
+    $btn.click(function() {
       var mapstatsurls = $(this).parent().siblings("table").find("a").filter((i, e) => e.href.indexOf("mapstatsid") > -1);
       var resultTds = $(this).parent().siblings("table").find("td.statsTeamMapResult");
-      self.collectEarlyAndLateRoundStats(mapstatsurls, $earlyLateBtn, resultTds, teamNum, themap)
+      self.collectDetailedMapStats(mapstatsurls, $btn, resultTds, teamNum, themap)
     })
   }
 
@@ -217,7 +217,7 @@ export default class TeamStats {
     });
   }
 
-  collectEarlyAndLateRoundStats(mapstatsurls, $btn, resultTds, teamNum, themap) {
+  collectDetailedMapStats(mapstatsurls, $btn, resultTds, teamNum, themap) {
     var numAll = mapstatsurls.length;
     var numDone = 0;
     $btn.parent().append("<div class='team_entries'>" + numDone + "/" + numAll + "</div>");
@@ -244,12 +244,13 @@ export default class TeamStats {
         roundsPlayed,
         mapsPlayed: mapstatsurls.length
       }
-      this.displayEarlyAndLateRoundStats(stats, $teamEntries)
+      this.displayDetailedMapStats(stats, $teamEntries.parent(), themap, teamNum)
       this.storeStats(stats, teamNum, themap)
     })
   }
 
-  displayEarlyAndLateRoundStats(values, $target) {
+  displayDetailedMapStats(values, $target, map, teamNum) {
+    let $table = $target.siblings("table")
     var sum = {
       entries: 0,
       clutchesLost: 0,
@@ -262,7 +263,9 @@ export default class TeamStats {
       sum.clutchesLost += e.clutchesLost;
       sum.clutchesWon += e.clutchesWon;
       sum.teamRating += e.teamRating;
+      this.displayMapHalfScores(e, $table)
     }
+    this.addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum);
     $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div>");
     var $teamEntriesColumnsDiv = $target.find("div#monkey_entries");
     var $teamClutchesColumnsDiv = $target.find("div#monkey_clutches");
@@ -270,6 +273,38 @@ export default class TeamStats {
     this.displayTeamRating($teamEntriesColumnsDiv, sum.teamRating, values.mapsPlayed);
     this.displayClutchesLost($teamClutchesColumnsDiv, sum.clutchesLost, values.mapsPlayed);
     this.displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, values.mapsPlayed);
+  }
+
+  addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum) {
+    let id = `monkey_toggle_breakdown_${map}_team${teamNum}`
+    $(`<div style="margin: 25px auto;text-align: center;"><input id='${id}' type='checkbox' /><label for='${id}'>Display map score breakdowns</label></div>`).insertBefore($table)
+    $(`#${id}`).change(function() {
+      var val = $(this).is(":checked");
+      let breakdownDivs = $table.find(".monkey-match-breakdown")
+      val ? breakdownDivs.css("display", "block") : breakdownDivs.css("display", "none")
+    });
+  }
+
+  displayMapHalfScores (match, $target) {
+    let tr = this.findMatchRowInTable(match.matchId, $target)
+    let $td = $(tr).find("td:nth(2)")
+    let breakdown = match.breakdown
+    let otHtml = "";
+    if (breakdown.overtime) {
+      otHtml = `|${breakdown.overtime.score}:${breakdown.overtime.enemyScore}`
+    }
+    $td.append(`<div class="monkey-match-breakdown stats-section stats-match" style="display:none;"><span class="${breakdown.firstHalf.side.toLowerCase()}-color">${breakdown.firstHalf.score}</span>:<span>${breakdown.firstHalf.enemyScore}</span>|<span class="${breakdown.secondHalf.side.toLowerCase()}-color">${breakdown.secondHalf.score}</span>:<span>${breakdown.secondHalf.enemyScore}</span>${otHtml}</div>`)
+  }
+
+  findMatchRowInTable(matchId, $table) {
+    var $timeTds = $table.find("td.time").toArray()
+    for (var i in $timeTds) {
+      var td = $timeTds[i]
+      var a = $(td).find("a")[0]
+      if (a.href.indexOf(matchId) !== -1) {
+        return $(td).parent("tr")
+      }
+    }
   }
 
   displayTeamRating($teamEntriesDiv, sum, mapsPlayed) {
@@ -302,87 +337,9 @@ export default class TeamStats {
   }
 
   queryMapstat(anchor) {
-    return new Promise(resolve => {
-      HLTVMonkey.crawler.queue(anchor.href).then((doc) => {
-        var el = $('<div></div>');
-        var teamname = $(anchor).data("teamname");
-        el.html(doc);
-        resolve({
-          entries: this.getEntries(el, teamname),
-          clutchesLost: this.getClutchesLost(el, teamname),
-          clutchesWon: this.getClutchesWon(el, teamname),
-          teamRating: this.getTeamRating(el, teamname)
-        });
-      })
+    return MatchStatService.getMatchStats({ 
+      url: anchor.href,
+      teamName: $(anchor).data("teamname")
     })
   }
-
-  getEntries(el, actualTeamName) {
-    var tl = el.find("div.team-left img.team-logo").attr('alt');
-    var left = false;
-    if (tl === actualTeamName) {
-      left = true;
-    }
-
-    var entries = el.find("div.match-info-row:nth(2)").text().trim();
-    var entryNum;
-    if(left) {
-      entryNum = entries.substr(0, entries.indexOf(":"));
-    } else {
-      entryNum = entries.substr(entries.indexOf(":") + 1, 3);
-    }
-    return parseInt(entryNum);
-  }
-
-  getClutchesLost(el, actualTeamName) {
-    var tl = el.find("div.team-left img.team-logo").attr('alt');
-    var left = true;
-    if (tl === actualTeamName) {
-      left = false;
-    }
-
-    var clutches = el.find("div.match-info-row:nth(3)").text().trim();
-    var clutchesLost;
-    if(left) {
-      clutchesLost = clutches.substr(0, clutches.indexOf(":"));
-    } else {
-      clutchesLost = clutches.substr(clutches.indexOf(":") + 1, 3);
-    }
-    return parseInt(clutchesLost);
-  }
-
-  getClutchesWon(el, actualTeamName) {
-    var tl = el.find("div.team-left img.team-logo").attr('alt');
-    var left = true;
-    if (tl === actualTeamName) {
-      left = false;
-    }
-
-    var clutches = el.find("div.match-info-row:nth(3)").text().trim();
-    var clutchesWon;
-    if(left) {
-      clutchesWon = clutches.substr(clutches.indexOf(":") + 1, 3);
-    } else {
-      clutchesWon = clutches.substr(0, clutches.indexOf(":"));
-    }
-    return parseInt(clutchesWon);
-  }
-
-  getTeamRating(el, actualTeamName) {
-    var tl = el.find("div.team-left img.team-logo").attr('alt');
-    var left = true;
-    if (tl === actualTeamName) {
-      left = false;
-    }
-
-    var ratings = el.find("div.match-info-row:nth(1)").text().trim();
-    var rating;
-    if(left) {
-      rating = ratings.substr(ratings.indexOf(":") + 1);
-    } else {
-      rating = ratings.substr(0, ratings.indexOf(":"));
-    }
-    return parseFloat(rating);
-  }
-
 }

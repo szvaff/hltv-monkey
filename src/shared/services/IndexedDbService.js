@@ -22,6 +22,9 @@ class IndexedDbService {
       if (!db.objectStoreNames.contains('teamstats')) {
         db.createObjectStore('teamstats', { keyPath: 'id' });
       }
+      if (!db.objectStoreNames.contains('matchstats')) {
+        db.createObjectStore('matchstats', { keyPath: 'id' });
+      }
     }
 
     return connection;
