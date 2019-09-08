@@ -1,10 +1,9 @@
 import $ from 'jquery'
 import { STYLES } from '../shared/constants';
 import MatchDataService from '../shared/services/MatchDataService';
-import { getSettings } from '../shared/utils/common';
 import IndexedDbService from '../shared/services/IndexedDbService';
 import MatchStatService from '../shared/services/MatchStatService';
-
+import { equals, getSettings } from '../shared/utils/common';
 
 export default class TeamStats {
 
@@ -106,6 +105,14 @@ export default class TeamStats {
           self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
           return;
         }
+
+        if (!equals(this.result.settings, getSettings())
+          || !equals(this.result.pastMatches.team1, self.pastMatches.team1)
+          || !equals(this.result.pastMatches.team2, self.pastMatches.team2)) {
+          self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
+          return;
+        }
+
         self.displayDetailedMapStats(this.result.stats, moreInfoDiv, themap, teamNum)
       }
 
