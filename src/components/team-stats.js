@@ -289,7 +289,7 @@ export default class TeamStats {
 
   displayAvgStartingRounds($target, rounds, side, color) {
     const avgRounds = rounds.reduce((pv, v) => pv + v, 0)/rounds.length
-    this.displayStat($target, avgRounds.toFixed(2), `Avg. rounds when starting as ${side}`, color);
+    this.displayStat($target, avgRounds.toFixed(2), `Avg. rounds when starting as ${side} (${rounds.length} matches)`, color);
   }
 
   displayClutchesLost($teamEntriesDiv, sum, mapsPlayed) {
