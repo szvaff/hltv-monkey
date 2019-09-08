@@ -105,10 +105,9 @@ export default class TeamStats {
           self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
           return;
         }
-
+        console.log(self.pastMatches)
         if (!equals(this.result.settings, getSettings())
-          || !equals(this.result.pastMatches.team1, self.pastMatches.team1)
-          || !equals(this.result.pastMatches.team2, self.pastMatches.team2)) {
+          || !equals(this.result.pastMatches, self.pastMatches[team])) {
           self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
           return;
         }
@@ -262,7 +261,9 @@ export default class TeamStats {
       entries: 0,
       clutchesLost: 0,
       clutchesWon: 0,
-      teamRating: 0
+      teamRating: 0,
+      ctStartingRounds: [],
+      tStartingRounds: []
     }
     for (var item in values.stats) {
       var e = values.stats[item]
@@ -270,16 +271,30 @@ export default class TeamStats {
       sum.clutchesLost += e.clutchesLost;
       sum.clutchesWon += e.clutchesWon;
       sum.teamRating += e.teamRating;
+      e.breakdown.firstHalf.side === "CT" ? sum.ctStartingRounds.push(e.breakdown.firstHalf.score) : sum.tStartingRounds.push(e.breakdown.firstHalf.score)
       this.displayMapHalfScores(e, $table)
     }
     this.addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum);
-    $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div>");
+    $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div><div class='columns' id='monkey_avgstartingrounds' style='margin-top: 25px'></div>");
     var $teamEntriesColumnsDiv = $target.find("div#monkey_entries");
     var $teamClutchesColumnsDiv = $target.find("div#monkey_clutches");
+    var $avgStartingRounds = $target.find("div#monkey_avgstartingrounds");
     this.displayEntryStats($teamEntriesColumnsDiv, sum.entries, values.roundsPlayed);
     this.displayTeamRating($teamEntriesColumnsDiv, sum.teamRating, values.mapsPlayed);
     this.displayClutchesLost($teamClutchesColumnsDiv, sum.clutchesLost, values.mapsPlayed);
     this.displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, values.mapsPlayed);
+    this.displayAvgStartingRounds($avgStartingRounds, sum.ctStartingRounds, 'CT', 'color: #0091d4;');
+    this.displayAvgStartingRounds($avgStartingRounds, sum.tStartingRounds, 'T', 'color: #fab200;');
+  }
+
+  displayAvgStartingRounds($target, rounds, side, color) {
+    const avgRounds = rounds.reduce((pv, v) => pv + v, 0)/rounds.length
+    this.displayStat($target, avgRounds.toFixed(2), `Avg. rounds when starting as ${side}`, color);
+  }
+
+  displayClutchesLost($teamEntriesDiv, sum, mapsPlayed) {
+    var clutchesLostPerMatch = (sum/mapsPlayed).toFixed(1);
+    this.displayStat($teamEntriesDiv, clutchesLostPerMatch, "Avg. clutches lost per map");
   }
 
   addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum) {
@@ -334,10 +349,10 @@ export default class TeamStats {
     this.displayStat($teamEntriesDiv, entrySuccess + "%", "Entry success percent based on rounds played");
   }
 
-  displayStat($teamEntriesDiv, num, str) {
+  displayStat($teamEntriesDiv, num, str, colorCss) {
     $teamEntriesDiv.append(`
       <div class="col standard-box big-padding" style="padding: 5px 10px; font-size: 10px;text-align:left;">
-        <div class="large-strong" style="font-size: 12px; font-weight: bold;">${num}</div>
+        <div class="large-strong" style="font-size: 12px; font-weight: bold;${colorCss}">${num}</div>
         <div class="small-label-below">${str}</div>
       </div>
     `);
