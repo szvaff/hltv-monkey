@@ -5,6 +5,7 @@ import { MatchesLinks } from '@/components/matches-links';
 import { Notepad } from '@/components/notepad';
 import { Settings } from '@/components/settings';
 import { Stats } from '@/components/stats';
+import { TournamentInfo } from '../../components/tournament-info';
 // import '../../vendor/fusioncharts'
 // import '../../vendor/fusioncharts.charts'
 // import '../../vendor/fusioncharts.theme.fint'
@@ -29,6 +30,7 @@ class HLTVMonkey {
       new Stats()
       new MatchCopyHandler()
       new Notepad()
+      new TournamentInfo()
     })
   }
 }
