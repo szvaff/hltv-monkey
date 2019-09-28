@@ -105,7 +105,6 @@ export default class TeamStats {
           self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
           return;
         }
-        console.log(self.pastMatches)
         if (!equals(this.result.settings, getSettings())
           || !equals(this.result.pastMatches, self.pastMatches[team])) {
           self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
@@ -275,7 +274,7 @@ export default class TeamStats {
       this.displayMapHalfScores(e, $table)
     }
     this.addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum);
-    $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div><div class='columns' id='monkey_avgstartingrounds' style='margin-top: 25px'></div>");
+    $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div><div class='columns' id='monkey_avgstartingrounds' style='margin-top: 25px'></div><div id='monkey_playerratings' style='margin-top: 25px'></div>");
     var $teamEntriesColumnsDiv = $target.find("div#monkey_entries");
     var $teamClutchesColumnsDiv = $target.find("div#monkey_clutches");
     var $avgStartingRounds = $target.find("div#monkey_avgstartingrounds");
@@ -285,6 +284,54 @@ export default class TeamStats {
     this.displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, values.mapsPlayed);
     this.displayAvgStartingRounds($avgStartingRounds, sum.ctStartingRounds, 'CT', 'color: #0091d4;');
     this.displayAvgStartingRounds($avgStartingRounds, sum.tStartingRounds, 'T', 'color: #fab200;');
+
+    let $playerRatingsDiv = $target.find("div#monkey_playerratings")
+    this.addPlayerRatings($playerRatingsDiv, values.stats)
+  }
+
+  addPlayerRatings($target, stats) {
+    console.log($target, stats)
+    $target.append("<table class='stats-table' style='table-layout: initial;'><thead><tr><th>Player</th><th>Avg. Rating</th><th>WMR</th><th>LMR</th><th>+/-</th></tr><tbody></tbody></table>")
+    let players = {}
+    for (let i = 0; i < stats.length; i++) {
+      let stat = stats[i]
+      let teamScore = stat.breakdown.overtime ? stat.breakdown.overtime.score : (stat.breakdown.firstHalf.score + stat.breakdown.secondHalf.score)
+      let enemyScore = stat.breakdown.overtime ? stat.breakdown.overtime.enemyScore : (stat.breakdown.firstHalf.enemyScore + stat.breakdown.secondHalf.enemyScore)
+      let matchWon = (teamScore > enemyScore)
+      for (let j = 0; j < stat.playerRatings.length; j++) {
+        let rating = stat.playerRatings[j]
+        rating.matchWon = matchWon
+        players[rating.playerId] = players[rating.playerId] || []
+        players[rating.playerId].push(rating)
+      }
+    }
+
+    let keys = Object.keys(players)
+    for (let i = 0; i < keys.length; i++) {
+      let playerMatches = players[keys[i]]
+      let playerHtml = playerMatches[0].playerHtml
+      let ratingsSum = 0;
+      let wmrSum = 0, lmrSum = 0, wmrCount = 0, lmrCount = 0;
+      for (let j = 0; j < playerMatches.length; j++) {
+        let playerMatch = playerMatches[j]
+        ratingsSum += playerMatch.playerRating;
+        if (playerMatch.matchWon) {
+          wmrSum += playerMatch.playerRating
+          wmrCount++
+        } else {
+          lmrSum += playerMatch.playerRating
+          lmrCount++
+        }
+      }
+      let playerAvgRating = (ratingsSum / playerMatches.length).toFixed(2)
+      let playerWmr = wmrSum / wmrCount
+      let playerLmr = lmrSum / lmrCount
+      let mrDiff = playerWmr - playerLmr
+      playerWmr = wmrCount > 0 ? playerWmr.toFixed(2) : '-'
+      playerLmr = lmrCount > 0 ? playerLmr.toFixed(2) : '-'
+      mrDiff = (wmrCount > 0 && lmrCount > 0) ? mrDiff.toFixed(2) : '-'
+      $target.find("tbody").append(`<tr><td style="text-align: left">${playerHtml}</td><td>${playerAvgRating}</td><td>${playerWmr}</td><td>${playerLmr}</td><td>${mrDiff}</td></tr>`)
+    }
   }
 
   displayAvgStartingRounds($target, rounds, side, color) {

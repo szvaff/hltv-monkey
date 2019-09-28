@@ -6,30 +6,21 @@ class MatchStatService {
   constructor() {}
 
   getMatchStats({ url, teamName }) {
-    return new Promise(resolve => {
-      var connection = IndexedDbService.getIndexedDbConnection();
-      var self = this;
-      connection.onsuccess = function() {
-        var db = this.result;
-        var tx = db.transaction('matchstats', 'readonly');
-        var store = tx.objectStore('matchstats');
-        var matchId = url.replace("https://www.hltv.org/stats/matches/mapstatsid/", "").split("/")[0];
-        var readTx = store.get(matchId);
-        readTx.onsuccess = function() {
-          if (!this.result) {
-            self.queryMapstat({ url, matchId }).then(stats => {
-              resolve(stats[teamName])
-            })
-            return;
-          }
-          resolve(this.result.stats[teamName])
-        }
-
-        readTx.onerror = function() {
-          self.queryMapstat({ url, matchId }).then(stats => {
+    return new Promise(async resolve => {
+      let matchId = url.replace("https://www.hltv.org/stats/matches/mapstatsid/", "").split("/")[0];
+      try {
+        const fromDb = await IndexedDbService.getFromStoreById('matchstats', matchId)
+        if (!fromDb.stats[teamName].playerRatings) {
+          this.queryMapstat({ url, matchId }).then(stats => {
             resolve(stats[teamName])
           })
+        } else {
+          resolve(fromDb.stats[teamName])
         }
+      } catch (e) {
+        this.queryMapstat({ url, matchId }).then(stats => {
+          resolve(stats[teamName])
+        })
       }
     })
   }
@@ -48,7 +39,8 @@ class MatchStatService {
           clutchesLost: this.getClutchesLost(el, tl),
           clutchesWon: this.getClutchesWon(el, tl),
           teamRating: this.getTeamRating(el, tl),
-          breakdown: this.getBreakdown(el, tl)
+          breakdown: this.getBreakdown(el, tl),
+          playerRatings: this.getPlayerRatings(el, 'left')
         }
         stats[tr] = {
           matchId,
@@ -56,12 +48,37 @@ class MatchStatService {
           clutchesLost: this.getClutchesLost(el, tr),
           clutchesWon: this.getClutchesWon(el, tr),
           teamRating: this.getTeamRating(el, tr),
-          breakdown: this.getBreakdown(el, tr)
+          breakdown: this.getBreakdown(el, tr),
+          playerRatings: this.getPlayerRatings(el, 'right')
         }
         resolve(stats);
         this.storeMapstat(matchId, stats)
       })
     })
+  }
+
+  getPlayerRatings(doc, teamSide) {
+    let $table = null;
+    if (teamSide === 'left') $table = doc.find("table.stats-table:first")
+    else $table = doc.find("table.stats-table:nth-of-type(2)")
+
+    let ratings = []
+    let $rows = $table.find("tbody tr")
+    for (let i = 0; i < $rows.length; i++) {
+      let $row = $($rows[i])
+      let playerId = $row.find("td.st-player a").attr("href")
+      let playerName = $row.find("td.st-player a").text()
+      let playerRating = parseFloat($row.find("td.st-rating").text())
+      let playerHtml = $row.find("td.st-player").html()
+      ratings.push({
+        playerId,
+        playerName,
+        playerRating,
+        playerHtml
+      })
+    }
+
+    return ratings
   }
 
   getBreakdown(el, teamName) {

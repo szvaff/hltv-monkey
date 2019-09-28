@@ -4,15 +4,15 @@ class IndexedDbService {
       console.log('This browser doesn\'t support IndexedDB');
       return;
     }
-
-    var connection = indexedDB.open('hltv-monkey', 8);
+    const CURRENT_VERSION = 8;
+    let connection = indexedDB.open('hltv-monkey', CURRENT_VERSION);
 
     connection.onerror = function() {
       console.log(this);
     }
 
-    connection.onupgradeneeded = function () {
-      var db = this.result;
+    connection.onupgradeneeded = function (e) {
+      let db = this.result;
       if (!db.objectStoreNames.contains('notes')) {
         db.createObjectStore('notes', { keyPath: 'id' });
       }
@@ -28,9 +28,42 @@ class IndexedDbService {
       if (!db.objectStoreNames.contains('tournament')) {
         db.createObjectStore('tournament', { keyPath: 'id' });
       }
+
+      if (e.oldVersion === 8 && CURRENT_VERSION === 9) {
+        let tx = db.transaction('teamstats', 'readwrite');
+        let store = tx.objectStore('teamstats');
+        store.clear()
+        tx = db.transaction('matchstats', 'readwrite');
+        store = tx.objectStore('matchstats');
+        store.clear()
+      }
     }
 
     return connection;
+  }
+
+  getReadWriteStore(storeName) {
+    let connection = this.getIndexedDbConnection();
+    return new Promise((resolve, reject) => {
+      connection.onsuccess = function() {
+        let db = this.result;
+        let tx = db.transaction(storeName, 'readonly');
+        let store = tx.objectStore(storeName);
+        let readTx = store.get(id);
+        readTx.onsuccess = function() {
+          if (!this.result) {
+            reject()
+            return;
+          }
+
+          resolve(this.result)
+        }
+  
+        readTx.onerror = function() {
+          reject()
+        }
+      }
+    });
   }
 
   getFromStoreById(storeName, id) {
