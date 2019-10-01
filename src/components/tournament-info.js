@@ -13,7 +13,6 @@ export class TournamentInfo {
     this.$infoDiv = $("#monkey_tournament_info");
     try {
       const fromDb = await IndexedDbService.getFromStoreById('tournament', this.url)
-      console.log(fromDb)
       this.displayInfo(fromDb.info)
     } catch (e) {
       this.addLoadButton();

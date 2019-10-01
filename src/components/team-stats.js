@@ -4,6 +4,7 @@ import MatchDataService from '../shared/services/MatchDataService';
 import IndexedDbService from '../shared/services/IndexedDbService';
 import MatchStatService from '../shared/services/MatchStatService';
 import { equals, getSettings } from '../shared/utils/common';
+import OpponentRankVisualizer from './opponent-rank-visualizer';
 
 export default class TeamStats {
 
@@ -105,7 +106,6 @@ export default class TeamStats {
           self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
           return;
         }
-        console.log(self.pastMatches)
         if (!equals(this.result.settings, getSettings())
           || !equals(this.result.pastMatches, self.pastMatches[team])) {
           self.addCollectDetailedMapStatsButton({ themap, teamNum, moreInfoDiv });
@@ -275,6 +275,7 @@ export default class TeamStats {
       this.displayMapHalfScores(e, $table)
     }
     this.addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum);
+    this.addOpponentRankVisualizer($table, map, teamNum);
     $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div><div class='columns' id='monkey_avgstartingrounds' style='margin-top: 25px'></div>");
     var $teamEntriesColumnsDiv = $target.find("div#monkey_entries");
     var $teamClutchesColumnsDiv = $target.find("div#monkey_clutches");
@@ -285,6 +286,10 @@ export default class TeamStats {
     this.displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, values.mapsPlayed);
     this.displayAvgStartingRounds($avgStartingRounds, sum.ctStartingRounds, 'CT', 'color: #0091d4;');
     this.displayAvgStartingRounds($avgStartingRounds, sum.tStartingRounds, 'T', 'color: #fab200;');
+  }
+
+  addOpponentRankVisualizer($table, map, teamNum) {
+    new OpponentRankVisualizer($table, map, teamNum)
   }
 
   displayAvgStartingRounds($target, rounds, side, color) {
