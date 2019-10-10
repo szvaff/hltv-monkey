@@ -56,6 +56,9 @@ export default class OpponentRankVisualizer {
       chartObj.chartType($(this).val())
     })
 
+    $(`<div>[all] avg. enemy rank: ${(matchesWithRankedOpponent.reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
+    $(`<div>[win] avg. enemy rank: ${(matchesWithRankedOpponent.filter(m => m.won).reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
+    $(`<div>[loss] avg. enemy rank: ${(matchesWithRankedOpponent.filter(m => !m.won).reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
 
     FusionCharts.ready(() => {
 			chartObj = new FusionCharts({
