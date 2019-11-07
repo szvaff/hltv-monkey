@@ -47,7 +47,7 @@ export default class OpponentRankVisualizer {
       return a.date - b.date
     });
 
-    const matchesWithRankedOpponent = this.matches.filter(m => m.rank !== null)
+    const matchesWithRankedOpponent = this.matches.filter(m => m.teamPage.rank !== null)
     let chartObj = null;
 
     const selectId = `monkey_collect_opponent_ranks_select_${this.map}_team${this.teamNum}`
@@ -62,7 +62,7 @@ export default class OpponentRankVisualizer {
 
     FusionCharts.ready(() => {
 			chartObj = new FusionCharts({
-        type: 'boxandwhisker2d',
+        type: 'msline',
         width: "100%",
         dataFormat: "json",
         renderAt: id,
@@ -76,42 +76,23 @@ export default class OpponentRankVisualizer {
                 bgAlpha: 100,
                 showBorder: 0
             },
-            "categories": [{
-              "category": [{
-                  "label": "Win"
-                },
-                {
-                  "label": "Loss"
-                }
-              ]
-            }],
-            "dataset": [{
-              "data": [{
-                  "value": matchesWithRankedOpponent.filter(m => { return m.won && m.teamPage.rank !== null } ).map(m => m.teamPage.rank).join(",")
-                },
-                {
-                  "value": matchesWithRankedOpponent.filter(m => { return !m.won && m.teamPage.rank !== null } ).map(m => m.teamPage.rank).join(",")
-                }
-              ]
-            }]
-          //   "categories": [
-          //     {
-          //         "category": matchesWithRankedOpponent.map(m => { return { label: `${m.date.getMonth()+1}/${m.date.getDate()}` } })
-          //     }
-          // ],
-          // "dataset": [
-          //     {
-          //         "seriesname": "Loss",
-          //         "color": "#e40a0a",
-          //         "data": matchesWithRankedOpponent.map(m => { return { value: m.won ? null : m.teamPage.rank, toolText: `Lost vs. ${m.teamPage.teamName} (#${m.teamPage.rank})` } })
-          //     },
-          //     {
-          //         "seriesname": "Win",
-          //         "color": "#08a500",
-          //         "data": matchesWithRankedOpponent.map(m => { return { value: m.won ? m.teamPage.rank : null, toolText: `Won vs. ${m.teamPage.teamName} (#${m.teamPage.rank})` } })
-          //     }
-          //   ]
-
+            "categories": [
+              {
+                  "category": matchesWithRankedOpponent.map(m => { return { label: `${m.date.getMonth()+1}/${m.date.getDate()}` } })
+              }
+          ],
+          "dataset": [
+              {
+                  "seriesname": "Loss",
+                  "color": "#e40a0a",
+                  "data": matchesWithRankedOpponent.map(m => { return { value: m.won ? null : m.teamPage.rank, toolText: `Lost vs. ${m.teamPage.teamName} (#${m.teamPage.rank})` } })
+              },
+              {
+                  "seriesname": "Win",
+                  "color": "#08a500",
+                  "data": matchesWithRankedOpponent.map(m => { return { value: m.won ? m.teamPage.rank : null, toolText: `Won vs. ${m.teamPage.teamName} (#${m.teamPage.rank})` } })
+              }
+            ]
         }
     });
     chartObj.render();
