@@ -275,7 +275,7 @@ export default class TeamStats {
       this.displayMapHalfScores(e, $table)
     }
     this.addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum);
-    this.addOpponentRankVisualizer($table, map, teamNum);
+    this.addOpponentRankVisualizer($table, map, teamNum, values.stats);
     $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div><div class='columns' id='monkey_avgstartingrounds' style='margin-top: 25px'></div>");
     var $teamEntriesColumnsDiv = $target.find("div#monkey_entries");
     var $teamClutchesColumnsDiv = $target.find("div#monkey_clutches");
@@ -288,8 +288,8 @@ export default class TeamStats {
     this.displayAvgStartingRounds($avgStartingRounds, sum.tStartingRounds, 'T', 'color: #fab200;');
   }
 
-  addOpponentRankVisualizer($table, map, teamNum) {
-    new OpponentRankVisualizer($table, map, teamNum)
+  addOpponentRankVisualizer($table, map, teamNum, stats) {
+    new OpponentRankVisualizer($table, map, teamNum, stats)
   }
 
   displayAvgStartingRounds($target, rounds, side, color) {

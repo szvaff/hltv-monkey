@@ -3,17 +3,21 @@ import $ from 'jquery'
 import teamPageParser from '../shared/utils/teamPageParser'
 
 export default class OpponentRankVisualizer {
-  constructor($table, map, teamNum) {
+  constructor($table, map, teamNum, stats) {
+    this.stats = stats
     this.map = map
     this.teamNum = teamNum
     const tableRows = Array.from($table.find("tbody tr"))
     this.matches = tableRows.map(tr => {
       let $tr = $(tr)
       let splittedDate = $tr.find("td:nth-of-type(1)").text().split("/")
+      let temp = $tr.find("td:nth-of-type(1) a").attr("href").replace("/stats/matches/mapstatsid/","")
+      let matchId = temp.substr(0, temp.indexOf("/"))
       return {
         date: new Date(parseInt('20' + splittedDate[2], 10), parseInt(splittedDate[1], 10) - 1, parseInt(splittedDate[0], 10)),
         opponentUrl: $tr.find("td:nth-of-type(2) a")[0].href.replace('stats/teams', 'team'),
-        won: $tr.find("td:nth-of-type(3)").hasClass("match-won")
+        won: $tr.find("td:nth-of-type(3)").hasClass("match-won"),
+        matchId
       }
     })
     let id = `monkey_collect_opponent_ranks_${map}_team${teamNum}`
@@ -46,7 +50,6 @@ export default class OpponentRankVisualizer {
     this.matches.sort(function(a,b){
       return a.date - b.date
     });
-
     const matchesWithRankedOpponent = this.matches.filter(m => m.teamPage.rank !== null)
     let chartObj = null;
 
@@ -56,7 +59,9 @@ export default class OpponentRankVisualizer {
       chartObj.chartType($(this).val())
     })
 
+    $(`<div>[all] avg. rating: ${(matchesWithRankedOpponent.reduce((acc, v) => acc + this.stats.find(s => s.matchId===v.matchId).teamRating, 0)/matchesWithRankedOpponent.length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
     $(`<div>[all] avg. enemy rank: ${(matchesWithRankedOpponent.reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
+    $(`<div>number of matches: ${matchesWithRankedOpponent.length}</div>`).insertAfter(`#${selectId}`)
     $(`<div>[win] avg. enemy rank: ${(matchesWithRankedOpponent.filter(m => m.won).reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.filter(m => m.won).length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
     $(`<div>[loss] avg. enemy rank: ${(matchesWithRankedOpponent.filter(m => !m.won).reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.filter(m => !m.won).length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
 
