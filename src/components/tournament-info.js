@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import IndexedDbService from '../shared/services/IndexedDbService';
 import HLTVMonkey from '../shared/services/HLTVMonkey';
+import DataCollectorService from '../shared/services/DataCollectorService';
 
 export class TournamentInfo {
   constructor () {
@@ -38,5 +39,6 @@ export class TournamentInfo {
     $(info).find("tbody").css("font-weight", "500")
     $(info).find("th.headline").removeClass("headline")
     this.$infoDiv.html(info)
+    DataCollectorService.addData({ field: "location", value: this.$infoDiv.find("td.location").text().trim() })
   }
 }

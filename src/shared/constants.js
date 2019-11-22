@@ -3,6 +3,10 @@ import $ from 'jquery'
 export const unixDate = new Date(parseInt($("div.date").attr("data-unix")));
 export const team1 = $("div.teamName")[0].innerText;
 export const team2 = $("div.teamName")[1].innerText;
+export const team1Rank = parseInt($("div.teamRanking")[0].innerText.replace("World rank: #", ""))
+export const team2Rank = parseInt($("div.teamRanking")[1].innerText.replace("World rank: #", ""))
+export const team1Country = $("div.team img.team1").attr("title")
+export const team2Country = $("div.team img.team2").attr("title")
 export const URL_PREFIX_LINEUP_MATCHES = "https://www.hltv.org/stats/lineup/matches/";
 
 export const LOCALSTORAGE_KEYS = {

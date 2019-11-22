@@ -1,6 +1,7 @@
 import HLTVMonkey from "../shared/services/HLTVMonkey"
 import $ from 'jquery'
 import teamPageParser from '../shared/utils/teamPageParser'
+import DataCollectorService from "../shared/services/DataCollectorService"
 
 export default class OpponentRankVisualizer {
   constructor($table, map, teamNum, stats) {
@@ -59,8 +60,13 @@ export default class OpponentRankVisualizer {
       chartObj.chartType($(this).val())
     })
 
-    $(`<div>[all] avg. rating: ${(matchesWithRankedOpponent.reduce((acc, v) => acc + this.stats.find(s => s.matchId===v.matchId).teamRating, 0)/matchesWithRankedOpponent.length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
-    $(`<div>[all] avg. enemy rank: ${(matchesWithRankedOpponent.reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
+    const avgRating = matchesWithRankedOpponent.reduce((acc, v) => acc + this.stats.find(s => s.matchId===v.matchId).teamRating, 0)/matchesWithRankedOpponent.length;
+    const avgEnemyRank = matchesWithRankedOpponent.reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.length
+
+    DataCollectorService.addTeamMapData({ teamNum: this.teamNum, map: this.map, avgRating, avgEnemyRank, numOfMatches: matchesWithRankedOpponent.length})
+
+    $(`<div>[all] avg. rating: ${avgRating.toFixed(2)}</div>`).insertAfter(`#${selectId}`)
+    $(`<div>[all] avg. enemy rank: ${avgEnemyRank.toFixed(2)}</div>`).insertAfter(`#${selectId}`)
     $(`<div>number of matches: ${matchesWithRankedOpponent.length}</div>`).insertAfter(`#${selectId}`)
     $(`<div>[win] avg. enemy rank: ${(matchesWithRankedOpponent.filter(m => m.won).reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.filter(m => m.won).length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)
     $(`<div>[loss] avg. enemy rank: ${(matchesWithRankedOpponent.filter(m => !m.won).reduce((acc, v) => acc + v.teamPage.rank, 0)/matchesWithRankedOpponent.filter(m => !m.won).length).toFixed(2)}</div>`).insertAfter(`#${selectId}`)

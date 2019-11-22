@@ -6,6 +6,8 @@ import { Notepad } from '@/components/notepad';
 import { Settings } from '@/components/settings';
 import { Stats } from '@/components/stats';
 import { TournamentInfo } from '../../components/tournament-info';
+import DataCollectorService from './DataCollectorService';
+import { DataCollector } from '../../components/data-collector';
 // import '../../vendor/fusioncharts'
 // import '../../vendor/fusioncharts.charts'
 // import '../../vendor/fusioncharts.theme.fint'
@@ -20,6 +22,8 @@ class HLTVMonkey {
       this.headLineBoxes = $(".lineup .box-headline");
       this.vetoBox = $("div.veto-box:first");
 
+      DataCollectorService.addData({ field: "description", value: this.vetoBox.text().trim() })
+
       if (this.vetoBox.length === 0) {
         $('<div class="standard-box veto-box"></div>').insertBefore($("div.mapholder").parent());
         this.vetoBox = $("div.veto-box:first");
@@ -31,6 +35,7 @@ class HLTVMonkey {
       new MatchCopyHandler()
       new Notepad()
       new TournamentInfo()
+      new DataCollector()
     })
   }
 }

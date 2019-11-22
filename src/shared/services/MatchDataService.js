@@ -43,7 +43,7 @@ class MatchDataService {
     return baseUrl + "minLineupMatch=" + SettingsService.minLineupMatch + "&" + this.getDateFilter() + (SettingsService.matchType == null ? "" : "&matchType=" + SettingsService.matchType);
   }
 
-  getLineupMatchesUrl(playersTeam) {
+  getLineupMatchesUrl(playersTeam, { matchType = SettingsService.matchType } = {}) {
     var baseUrl = URL_PREFIX_LINEUP_MATCHES + "?";
     if (playersTeam.length > 5) {
       for (var i = 0; i < 5; i++) {
@@ -55,8 +55,8 @@ class MatchDataService {
         baseUrl += "lineup=" + item + "&";
       }
     }
-
-    return baseUrl + "minLineupMatch=" + SettingsService.minLineupMatch + "&" + this.getDateFilter() + ( SettingsService.matchType == null ? "" : "&matchType=" + SettingsService.matchType);
+    
+    return baseUrl + "minLineupMatch=" + SettingsService.minLineupMatch + "&" + this.getDateFilter() + ( matchType == null ? "" : "&matchType=" + matchType);
   }
 
   getDateFilter() {
