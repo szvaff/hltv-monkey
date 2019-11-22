@@ -49,8 +49,8 @@ export class DataCollector {
       const resultSpans = $(playedMap).siblings("div.results").find("span")
       const team1Result = resultSpans[0].innerText
       const team2Result = resultSpans[2].innerText
-      DataCollectorService.fields.team1.mapStats[map].score = team1Result
-      DataCollectorService.fields.team2.mapStats[map].score = team2Result
+      DataCollectorService.fields.team1.mapStats[map].score = parseInt(team1Result)
+      DataCollectorService.fields.team2.mapStats[map].score = parseInt(team2Result)
     })
   }
 
