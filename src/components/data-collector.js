@@ -24,7 +24,7 @@ export class DataCollector {
   }
   
   async collectLastLan ({ teamNum }) {
-    const url = MatchDataService.getLineupMatchesUrl(teamNum === 1 ? MatchDataService.getPlayersTeam1(): MatchDataService.getPlayersTeam2(), { matchType: 'LAN'});
+    const url = MatchDataService.getLineupMatchesUrl(teamNum === 1 ? MatchDataService.getPlayersTeam1(): MatchDataService.getPlayersTeam2(), { matchType: 'Lan'});
     const teamMatchesPage = await HLTVMonkey.crawler.queue(url)
     let dummyDocument = $('<div></div>');
     dummyDocument.html(teamMatchesPage);
