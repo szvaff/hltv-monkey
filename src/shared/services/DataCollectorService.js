@@ -4,6 +4,7 @@ class DataCollectorService {
   constructor () {
     this.fields = {
       location: null,
+      country: null,
       description: null,
       team1: {
         name: team1,

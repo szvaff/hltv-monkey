@@ -61,13 +61,16 @@ export class DataCollector {
     const onlineOrLan = DataCollectorService.isOnline() ? "Online" : "LAN"
     const knockout = this.isKnockout() ? "Yes" : "No"
     const lanFirst = this.isOpeningMatch() ? "Yes" : "No"
+    const isNotContinent = fields.country !== "Europe" && fields.country !== "Asia" && fields.country !== "CIS" && fields.country !== "Oceania"
     const sheetJSON = {
       team1Name: fields.team1.name,
       team1Rank: fields.team1.rank,
       team1LastLan: Math.round(fields.team1.lastLan),
+      team1Home: (isNotContinent && fields.team1.country === fields.country) ? "Yes" : "No",
       team2Name: fields.team2.name,
       team2Rank: fields.team2.rank,
       team2LastLan: Math.round(fields.team2.lastLan),
+      team2Home: (isNotContinent && fields.team2.country === fields.country) ? "Yes" : "No",
       domestic,
       onlineOrLan,
       knockout,

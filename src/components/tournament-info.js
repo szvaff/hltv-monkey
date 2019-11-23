@@ -40,5 +40,6 @@ export class TournamentInfo {
     $(info).find("th.headline").removeClass("headline")
     this.$infoDiv.html(info)
     DataCollectorService.addData({ field: "location", value: this.$infoDiv.find("td.location").text().trim() })
+    DataCollectorService.addData({ field: "country", value: this.$infoDiv.find("td.location img").attr("alt") })
   }
 }
