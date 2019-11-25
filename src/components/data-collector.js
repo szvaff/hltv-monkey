@@ -47,6 +47,7 @@ export class DataCollector {
     playedMaps.each((index, playedMap) => {
       const map = $(playedMap).find("div.mapname").text()
       const resultSpans = $(playedMap).siblings("div.results").find("span")
+      if (resultSpans.length === 0) return
       const team1Result = resultSpans[0].innerText
       const team2Result = resultSpans[2].innerText
       DataCollectorService.fields.team1.mapStats[map].score = parseInt(team1Result)
