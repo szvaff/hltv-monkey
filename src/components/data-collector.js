@@ -11,7 +11,9 @@ export class DataCollector {
 
   add() {
     HLTVMonkey.vetoBox.append("<button id='datacollect'>datacollect</button>");
+    HLTVMonkey.vetoBox.append("<button id='overunder'>overunder</button>");
     $("#datacollect").click(() => { this.collect() });
+    $("#overunder").click(() => { this.overUnder() });
   }
 
   async collect () {
@@ -21,6 +23,34 @@ export class DataCollector {
     this.copyData()
     console.log("collection done")
     $("#datacollect").text("done")
+  }
+
+  async overUnder () {
+    this.findMapResults();
+    const fields = DataCollectorService.fields
+    const playedMaps = $("div.mapholder div.played")
+    let arr = []
+    playedMaps.each((index, playedMap) => {
+      const map = $(playedMap).find("div.mapname").text()
+      const resultSpans = $(playedMap).siblings("div.results").find("span")
+      if (resultSpans.length === 0) return
+      const team1Result = parseInt(resultSpans[0].innerText)
+      const team2Result = parseInt(resultSpans[2].innerText)
+      if (fields.team1.mapStats[map].tRoundsWin !== null && fields.team1.mapStats[map].ctRoundsWin !== null && fields.team2.mapStats[map].tRoundsWin !== null && fields.team2.mapStats[map].ctRoundsWin !== null) {
+        arr.push(`${fields.team1.name}\t${fields.team2.name}\t${map}\t${fields.team1.mapStats[map].tRoundsWin}\t${fields.team1.mapStats[map].ctRoundsWin}\t${fields.team2.mapStats[map].tRoundsWin}\t${fields.team2.mapStats[map].ctRoundsWin}\t${team1Result}\t${team2Result}`)
+      }
+    })
+    if (arr.length > 0) {
+      let txtArea = $("<textarea></textarea>");
+      txtArea.text(arr.join('\n'));
+      $("body").append(txtArea);
+      txtArea.select();
+      document.execCommand('copy');
+      txtArea.remove();
+      $("#overunder").text("done")
+    } else {
+      $("#overunder").text("noinfo")
+    }
   }
   
   async collectLastLan ({ teamNum }) {
@@ -81,7 +111,6 @@ export class DataCollector {
         team2: fields.team2.mapStats
       }
     }
-    console.log(sheetJSON)
     txtArea.text(JSON.stringify(sheetJSON));
     $("body").append(txtArea);
     txtArea.select();

@@ -11,13 +11,13 @@ class DataCollectorService {
         rank: team1Rank,
         country: team1Country,
         mapStats: {
-          Dust2: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Mirage: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Inferno: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Nuke: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Train: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Overpass: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Vertigo: { aer: null, atr: null, numOfMatches: 0, score: null }
+          Dust2: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Mirage: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Inferno: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Nuke: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Train: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Overpass: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Vertigo: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null }
         }
       },
       team2: {
@@ -25,13 +25,13 @@ class DataCollectorService {
         rank: team2Rank,
         country: team2Country,
         mapStats: {
-          Dust2: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Mirage: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Inferno: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Nuke: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Train: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Overpass: { aer: null, atr: null, numOfMatches: 0, score: null },
-          Vertigo: { aer: null, atr: null, numOfMatches: 0, score: null }
+          Dust2: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Mirage: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Inferno: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Nuke: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Train: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Overpass: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null },
+          Vertigo: { aer: null, atr: null, numOfMatches: 0, score: null, ctRoundsWin: null, tRoundsWin: null }
         }
       }
     }
@@ -52,6 +52,10 @@ class DataCollectorService {
 
   addTeamData({ teamNum, field, value }) {
     this.fields[`team${teamNum}`][field] = value
+  }
+
+  addTeamMapField({ teamNum, map, field, value }) {
+    this.fields[`team${teamNum}`].mapStats[map][field] = value
   }
 
   isDomestic() {

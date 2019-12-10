@@ -5,6 +5,8 @@ import IndexedDbService from '../shared/services/IndexedDbService';
 import MatchStatService from '../shared/services/MatchStatService';
 import { equals, getSettings } from '../shared/utils/common';
 import OpponentRankVisualizer from './opponent-rank-visualizer';
+import { EBADF } from 'constants';
+import DataCollectorService from '../shared/services/DataCollectorService';
 
 export default class TeamStats {
 
@@ -263,7 +265,15 @@ export default class TeamStats {
       clutchesWon: 0,
       teamRating: 0,
       ctStartingRounds: [],
-      tStartingRounds: []
+      tStartingRounds: [],
+      ctRounds: {
+        won: 0,
+        count : 0
+      },
+      tRounds: {
+        won: 0,
+        count: 0
+      }
     }
     for (var item in values.stats) {
       var e = values.stats[item]
@@ -272,29 +282,55 @@ export default class TeamStats {
       sum.clutchesWon += e.clutchesWon;
       sum.teamRating += e.teamRating;
       e.breakdown.firstHalf.side === "CT" ? sum.ctStartingRounds.push(e.breakdown.firstHalf.score) : sum.tStartingRounds.push(e.breakdown.firstHalf.score)
+
+      if (e.breakdown.firstHalf.side === "CT") {
+        sum.ctRounds.won += e.breakdown.firstHalf.score
+        sum.ctRounds.count += e.breakdown.firstHalf.score + e.breakdown.firstHalf.enemyScore
+      } else {
+        sum.tRounds.won += e.breakdown.firstHalf.score
+        sum.tRounds.count += e.breakdown.firstHalf.score + e.breakdown.firstHalf.enemyScore
+      }
+
+      if (e.breakdown.secondHalf.side === "CT") {
+        sum.ctRounds.won += e.breakdown.secondHalf.score
+        sum.ctRounds.count += e.breakdown.secondHalf.score + e.breakdown.secondHalf.enemyScore
+      } else {
+        sum.tRounds.won += e.breakdown.secondHalf.score
+        sum.tRounds.count += e.breakdown.secondHalf.score + e.breakdown.secondHalf.enemyScore
+      }
       this.displayMapHalfScores(e, $table)
     }
     this.addDisplayMapScoreBreakdownsCheckbox($table, map, teamNum);
     this.addOpponentRankVisualizer($table, map, teamNum, values.stats);
-    $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div><div class='columns' id='monkey_avgstartingrounds' style='margin-top: 25px'></div>");
+    $target.html("<div id='monkey_entries' class='columns'></div><div id='monkey_clutches' class='columns' style='margin-top: 25px'></div><div class='columns' id='monkey_avgstartingrounds' style='margin-top: 25px'></div><div class='columns' id='monkey_rounds' style='margin-top: 25px'></div>");
     var $teamEntriesColumnsDiv = $target.find("div#monkey_entries");
     var $teamClutchesColumnsDiv = $target.find("div#monkey_clutches");
     var $avgStartingRounds = $target.find("div#monkey_avgstartingrounds");
+    let $avgRounds = $target.find("div#monkey_rounds");
     this.displayEntryStats($teamEntriesColumnsDiv, sum.entries, values.roundsPlayed);
     this.displayTeamRating($teamEntriesColumnsDiv, sum.teamRating, values.mapsPlayed);
     this.displayClutchesLost($teamClutchesColumnsDiv, sum.clutchesLost, values.mapsPlayed);
     this.displayClutchesWon($teamClutchesColumnsDiv, sum.clutchesWon, values.mapsPlayed);
     this.displayAvgStartingRounds($avgStartingRounds, sum.ctStartingRounds, 'CT', 'color: #0091d4;');
     this.displayAvgStartingRounds($avgStartingRounds, sum.tStartingRounds, 'T', 'color: #fab200;');
+    this.displayAvgRounds($avgRounds, sum.ctRounds, 'CT', 'color: #0091d4;');
+    this.displayAvgRounds($avgRounds, sum.tRounds, 'T', 'color: #fab200;');
+    DataCollectorService.addTeamMapField({ teamNum, map, field: 'ctRoundsWin', value: (sum.ctRounds.won/sum.ctRounds.count)})
+    DataCollectorService.addTeamMapField({ teamNum, map, field: 'tRoundsWin', value: (sum.tRounds.won/sum.tRounds.count)})
   }
 
   addOpponentRankVisualizer($table, map, teamNum, stats) {
     new OpponentRankVisualizer($table, map, teamNum, stats)
   }
 
-  displayAvgStartingRounds($target, rounds, side, color) {
+  displayAvgStartingRounds($target, rounds, side, color, numOfMatches) {
     const avgRounds = rounds.reduce((pv, v) => pv + v, 0)/rounds.length
     this.displayStat($target, avgRounds.toFixed(2), `Avg. rounds when starting as ${side} (${rounds.length} matches)`, color);
+  }
+
+  displayAvgRounds($target, rounds, side, color) {
+    const avgRounds = rounds.won/rounds.count * 100
+    this.displayStat($target, `${avgRounds.toFixed(2)}%`, `Rounds won as ${side}`, color);
   }
 
   displayClutchesLost($teamEntriesDiv, sum, mapsPlayed) {
