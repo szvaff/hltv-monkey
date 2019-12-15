@@ -12,8 +12,10 @@ export class DataCollector {
   add() {
     HLTVMonkey.vetoBox.append("<button id='datacollect'>datacollect</button>");
     HLTVMonkey.vetoBox.append("<button id='overunder'>overunder</button>");
+    HLTVMonkey.vetoBox.append("<button id='weighted_rank'>weighted_rank</button>");
     $("#datacollect").click(() => { this.collect() });
     $("#overunder").click(() => { this.overUnder() });
+    $("#weighted_rank").click(() => { this.copyWeightedRank() });
   }
 
   async collect () {
@@ -50,6 +52,34 @@ export class DataCollector {
       $("#overunder").text("done")
     } else {
       $("#overunder").text("noinfo")
+    }
+  }
+
+  async copyWeightedRank () {
+    this.findMapResults();
+    const fields = DataCollectorService.fields
+    const playedMaps = $("div.mapholder div.played")
+    let arr = []
+    playedMaps.each((index, playedMap) => {
+      const map = $(playedMap).find("div.mapname").text()
+      const resultSpans = $(playedMap).siblings("div.results").find("span")
+      if (resultSpans.length === 0) return
+      const team1Result = parseInt(resultSpans[0].innerText)
+      const team2Result = parseInt(resultSpans[2].innerText)
+      if (fields.team1.mapStats[map].tRoundsWin !== null && fields.team1.mapStats[map].ctRoundsWin !== null && fields.team2.mapStats[map].tRoundsWin !== null && fields.team2.mapStats[map].ctRoundsWin !== null) {
+        arr.push(`${fields.team1.name}\t${fields.team2.name}\t${map}\t${fields.team1.mapStats[map].aer}\t${fields.team1.mapStats[map].atr}\t${fields.team2.mapStats[map].aer}\t${fields.team2.mapStats[map].atr}\t${team1Result}\t${team2Result}`)
+      }
+    })
+    if (arr.length > 0) {
+      let txtArea = $("<textarea></textarea>");
+      txtArea.text(arr.join('\n'));
+      $("body").append(txtArea);
+      txtArea.select();
+      document.execCommand('copy');
+      txtArea.remove();
+      $("#weighted_rank").text("done")
+    } else {
+      $("#weighted_rank").text("noinfo")
     }
   }
   
