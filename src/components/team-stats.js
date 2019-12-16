@@ -316,7 +316,9 @@ export default class TeamStats {
     this.displayAvgRounds($avgRounds, sum.ctRounds, 'CT', 'color: #0091d4;');
     this.displayAvgRounds($avgRounds, sum.tRounds, 'T', 'color: #fab200;');
     DataCollectorService.addTeamMapField({ teamNum, map, field: 'ctRoundsWin', value: (sum.ctRounds.won/sum.ctRounds.count)})
+    DataCollectorService.addTeamMapField({ teamNum, map, field: 'ctRoundsCount', value: sum.ctRounds.count})
     DataCollectorService.addTeamMapField({ teamNum, map, field: 'tRoundsWin', value: (sum.tRounds.won/sum.tRounds.count)})
+    DataCollectorService.addTeamMapField({ teamNum, map, field: 'tRoundsCount', value: sum.tRounds.count})
   }
 
   addOpponentRankVisualizer($table, map, teamNum, stats) {

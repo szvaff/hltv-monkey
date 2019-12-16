@@ -42,12 +42,10 @@ class DataCollectorService {
   }
 
   addTeamMapData({ teamNum, map, avgRating, avgEnemyRank, numOfMatches }) {
-    this.fields[`team${teamNum}`].mapStats[map] = {
-      aer: avgEnemyRank,
-      atr: avgRating,
-      numOfMatches,
-      score: this.fields[`team${teamNum}`].mapStats[map].score
-    }
+    this.fields[`team${teamNum}`].mapStats[map].aer = avgEnemyRank
+    this.fields[`team${teamNum}`].mapStats[map].atr = avgRating
+    this.fields[`team${teamNum}`].mapStats[map].numOfMatches = numOfMatches
+    this.fields[`team${teamNum}`].mapStats[map].score = this.fields[`team${teamNum}`].mapStats[map].score
   }
 
   addTeamData({ teamNum, field, value }) {
