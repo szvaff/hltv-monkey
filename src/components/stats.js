@@ -6,11 +6,13 @@ import MatchDataService from "../shared/services/MatchDataService";
 import { ALL_MAPS, STATS_DIV, STYLES } from "../shared/constants";
 import { equals, getSettings } from '../shared/utils/common'
 import TeamStats from './team-stats';
+import { OverUnderStats } from './over-under-stats';
 
 export class Stats {
   constructor() {
     this.$statsDiv1 = null
     this.$statsDiv2 = null
+    this.$overUnderDiv = $("<div id='monkey_over_under' class='columns'></div>")
     this.t1Done = 0
     this.t2Done = 0
     this.$mapChanger = $("<div class='stats-section'></div>");
@@ -103,8 +105,10 @@ export class Stats {
     this.$statsDiv1 = $(STATS_DIV);
     this.$statsDiv2 = $(STATS_DIV);
     const $statsContainer = $(".g-grid.maps");
+    $statsContainer.append(this.$overUnderDiv);
     $statsContainer.append(this.$statsDiv1);
     $statsContainer.append(this.$statsDiv2);
+    new OverUnderStats(this.$overUnderDiv)
   }
 
   clean() {

@@ -5,8 +5,8 @@ import IndexedDbService from '../shared/services/IndexedDbService';
 import MatchStatService from '../shared/services/MatchStatService';
 import { equals, getSettings } from '../shared/utils/common';
 import OpponentRankVisualizer from './opponent-rank-visualizer';
-import { EBADF } from 'constants';
 import DataCollectorService from '../shared/services/DataCollectorService';
+import OverUnderService from '../shared/services/OverUnderService'
 
 export default class TeamStats {
 
@@ -34,6 +34,15 @@ export default class TeamStats {
           var next = $(this).parent().next();
           var graph = el.find("div.graph");
           var stats = el.find("div.stats-rows");
+
+          const gameChangerLabels = el.find('.small-label-below')
+          OverUnderService.add({
+            roundWinAfterFirstKill: parseFloat(gameChangerLabels[0].previousElementSibling.innerText) / 100,
+            roundWinAfterFirstDeath: parseFloat(gameChangerLabels[1].previousElementSibling.innerText) / 100,
+            teamNum,
+            map: themap,
+            timesPlayed: el.find("table.stats-table tbody tr").length
+          })
 
           overallStats.push({
             mapName: themap,
